@@ -1,0 +1,6 @@
+{
+  "name": "प्रशिक्षण निदेशालय, उत्तर प्रदेश - प्रवासी श्रमिक भाषा एवं कौशल पोर्टल",
+  "description": "प्रशिक्षण निदेशालय, उत्तर प्रदेश (Directorate of Training, UP) - विदेश व अन्य राज्यों में रोजगार हेतु जाने वाले श्रमिकों के लिए AI आधारित भाषा, 150+ कार्य शब्दावली व बोलकर उच्चारण जांच (Interactive Voice Quiz) पोर्टल।",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
