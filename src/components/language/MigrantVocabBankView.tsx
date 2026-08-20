@@ -83,9 +83,12 @@ export const MigrantVocabBankView: React.FC<MigrantVocabBankViewProps> = ({
     return true;
   });
 
-  // Audio Playback with high-clarity native Arabic support
-  const handlePlayAudio = (text: string) => {
-    playNativePronunciation(text, currentLanguage.id, { rate: 0.85 });
+  // Audio Playback with high-clarity native Arabic support & Android hardening
+  const handlePlayAudio = (text: string, phoneticHint?: string) => {
+    playNativePronunciation(text, currentLanguage.id, { 
+      rate: 0.85,
+      phoneticHint: phoneticHint 
+    });
   };
 
   const getTradeIcon = (iconName: string) => {
@@ -235,7 +238,7 @@ export const MigrantVocabBankView: React.FC<MigrantVocabBankViewProps> = ({
                       {currentLanguage.flag} {currentLanguage.name.split(' ')[0]}
                     </span>
                     <button
-                      onClick={() => handlePlayAudio(detail.word)}
+                      onClick={() => handlePlayAudio(detail.word, detail.phoneticHindi)}
                       className="p-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 transition-all cursor-pointer"
                       title="उच्चारण सुनें (Listen)"
                     >
@@ -257,7 +260,7 @@ export const MigrantVocabBankView: React.FC<MigrantVocabBankViewProps> = ({
                   <div className="flex items-center justify-between text-[10px] text-slate-400 font-bold">
                     <span>कार्यस्थल उदाहरण:</span>
                     <button 
-                      onClick={() => handlePlayAudio(detail.exampleSentence)}
+                      onClick={() => handlePlayAudio(detail.exampleSentence, detail.examplePhoneticHindi)}
                       className="text-amber-400 hover:underline flex items-center gap-0.5"
                     >
                       <Volume2 className="w-2.5 h-2.5" /> सुनें
@@ -276,7 +279,7 @@ export const MigrantVocabBankView: React.FC<MigrantVocabBankViewProps> = ({
               {/* Card Footer: Quick Actions */}
               <div className="pt-2 border-t border-slate-800 flex items-center justify-between gap-2">
                 <button
-                  onClick={() => handlePlayAudio(detail.word)}
+                  onClick={() => handlePlayAudio(detail.word, detail.phoneticHindi)}
                   className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-300 text-xs font-bold border border-slate-800 transition-all cursor-pointer"
                 >
                   <Volume2 className="w-3.5 h-3.5 text-amber-400" />

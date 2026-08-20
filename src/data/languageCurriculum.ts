@@ -1,3 +1,11 @@
+export interface LanguageFlagInfo {
+  colors: string[]; // Hex color codes
+  colorNamesHindi: string; // Hindi color names
+  countryNameHindi: string; // Hindi country name
+  pattern: 'uae-four-color' | 'horizontal-stripes' | 'vertical-stripes' | 'japan-sun' | 'cross-union';
+  gradientCss: string;
+}
+
 export interface LanguageConfig {
   id: string;
   name: string;
@@ -8,6 +16,7 @@ export interface LanguageConfig {
   description: string;
   levels: Array<'A1 - Absolute Beginner' | 'A2 - Elementary' | 'B1 - Intermediate' | 'B2 - Advanced'>;
   accentColor: string;
+  flagInfo: LanguageFlagInfo;
 }
 
 export const SUPPORTED_LANGUAGES: LanguageConfig[] = [
@@ -20,51 +29,14 @@ export const SUPPORTED_LANGUAGES: LanguageConfig[] = [
     scriptName: 'Arabic (العربية)',
     description: 'Learn authentic UAE colloquial dialect with diacritics, local expressions, and Emirati cultural norms.',
     levels: ['A1 - Absolute Beginner', 'A2 - Elementary', 'B1 - Intermediate', 'B2 - Advanced'],
-    accentColor: '#10b981'
-  },
-  {
-    id: 'french',
-    name: 'French (Français)',
-    nativeName: 'Français',
-    flag: '🇫🇷',
-    direction: 'ltr',
-    scriptName: 'Latin',
-    description: 'Master contemporary French with conversational nuances, phonetic liaison, and etiquette rules.',
-    levels: ['A1 - Absolute Beginner', 'A2 - Elementary', 'B1 - Intermediate', 'B2 - Advanced'],
-    accentColor: '#3b82f6'
-  },
-  {
-    id: 'japanese',
-    name: 'Japanese (日本語)',
-    nativeName: '日本語',
-    flag: '🇯🇵',
-    direction: 'ltr',
-    scriptName: 'Kanji / Kana (漢字・仮名)',
-    description: 'Explore Hiragana, Katakana, Kanji, polite Keigo registers, and Japanese Omotenashi hospitality.',
-    levels: ['A1 - Absolute Beginner', 'A2 - Elementary', 'B1 - Intermediate', 'B2 - Advanced'],
-    accentColor: '#ec4899'
-  },
-  {
-    id: 'hindi',
-    name: 'Hindi (हिन्दी)',
-    nativeName: 'हिन्दी',
-    flag: '🇮🇳',
-    direction: 'ltr',
-    scriptName: 'Devanagari (देवनागरी)',
-    description: 'Explore formal and conversational Hindi, polite honorifics (आप/तुम), and poetic idioms.',
-    levels: ['A1 - Absolute Beginner', 'A2 - Elementary', 'B1 - Intermediate', 'B2 - Advanced'],
-    accentColor: '#f59e0b'
-  },
-  {
-    id: 'spanish',
-    name: 'Spanish (Español)',
-    nativeName: 'Español',
-    flag: '🇪🇸',
-    direction: 'ltr',
-    scriptName: 'Latin',
-    description: 'Learn conversational Castilian and Latin American Spanish with rich verb conjugation systems.',
-    levels: ['A1 - Absolute Beginner', 'A2 - Elementary', 'B1 - Intermediate', 'B2 - Advanced'],
-    accentColor: '#8b5cf6'
+    accentColor: '#10b981',
+    flagInfo: {
+      colors: ['#00732F', '#FFFFFF', '#000000', '#FF0000'],
+      colorNamesHindi: 'हरा • सफेद • काला • लाल',
+      countryNameHindi: 'संयुक्त अरब अमीरात (UAE) व खाड़ी देश',
+      pattern: 'uae-four-color',
+      gradientCss: 'from-emerald-700 via-slate-100 via-slate-900 to-red-600'
+    }
   },
   {
     id: 'german',
@@ -75,7 +47,32 @@ export const SUPPORTED_LANGUAGES: LanguageConfig[] = [
     scriptName: 'Latin',
     description: 'Master German sentence construction, grammatical cases (Nominativ, Akkusativ, Dativ), and compound words.',
     levels: ['A1 - Absolute Beginner', 'A2 - Elementary', 'B1 - Intermediate', 'B2 - Advanced'],
-    accentColor: '#06b6d4'
+    accentColor: '#06b6d4',
+    flagInfo: {
+      colors: ['#000000', '#DD0000', '#FFCE00'],
+      colorNamesHindi: 'काला • लाल • सुनहरा पीला',
+      countryNameHindi: 'जर्मनी (Germany)',
+      pattern: 'horizontal-stripes',
+      gradientCss: 'from-slate-950 via-red-600 to-amber-400'
+    }
+  },
+  {
+    id: 'japanese',
+    name: 'Japanese (日本語)',
+    nativeName: '日本語',
+    flag: '🇯🇵',
+    direction: 'ltr',
+    scriptName: 'Kanji / Kana (漢字・仮名)',
+    description: 'Explore Hiragana, Katakana, Kanji, polite Keigo registers, and Japanese Omotenashi hospitality.',
+    levels: ['A1 - Absolute Beginner', 'A2 - Elementary', 'B1 - Intermediate', 'B2 - Advanced'],
+    accentColor: '#ec4899',
+    flagInfo: {
+      colors: ['#FFFFFF', '#BC002D'],
+      colorNamesHindi: 'श्वेत (सफेद) • गहरा लाल सूर्य (Hinomaru)',
+      countryNameHindi: 'जापान (Japan)',
+      pattern: 'japan-sun',
+      gradientCss: 'from-white via-rose-500 to-red-700'
+    }
   },
   {
     id: 'english',
@@ -86,7 +83,68 @@ export const SUPPORTED_LANGUAGES: LanguageConfig[] = [
     scriptName: 'Latin',
     description: 'Master practical workplace English, safety briefings, tool names, and global site instructions.',
     levels: ['A1 - Absolute Beginner', 'A2 - Elementary', 'B1 - Intermediate', 'B2 - Advanced'],
-    accentColor: '#38bdf8'
+    accentColor: '#38bdf8',
+    flagInfo: {
+      colors: ['#012169', '#FFFFFF', '#C8102E'],
+      colorNamesHindi: 'गहरा नीला • सफेद • लाल (Union Jack)',
+      countryNameHindi: 'यूके एवं वैश्विक कार्यस्थल (UK & Global)',
+      pattern: 'cross-union',
+      gradientCss: 'from-blue-900 via-slate-100 to-red-600'
+    }
+  },
+  {
+    id: 'french',
+    name: 'French (Français)',
+    nativeName: 'Français',
+    flag: '🇫🇷',
+    direction: 'ltr',
+    scriptName: 'Latin',
+    description: 'Master contemporary French with conversational nuances, phonetic liaison, and etiquette rules.',
+    levels: ['A1 - Absolute Beginner', 'A2 - Elementary', 'B1 - Intermediate', 'B2 - Advanced'],
+    accentColor: '#3b82f6',
+    flagInfo: {
+      colors: ['#002654', '#FFFFFF', '#ED2939'],
+      colorNamesHindi: 'नीला • सफेद • लाल (Tricolore)',
+      countryNameHindi: 'फ्रांस व यूरोप (France & EU)',
+      pattern: 'vertical-stripes',
+      gradientCss: 'from-blue-800 via-slate-100 to-red-600'
+    }
+  },
+  {
+    id: 'spanish',
+    name: 'Spanish (Español)',
+    nativeName: 'Español',
+    flag: '🇪🇸',
+    direction: 'ltr',
+    scriptName: 'Latin',
+    description: 'Learn conversational Castilian and Latin American Spanish with rich verb conjugation systems.',
+    levels: ['A1 - Absolute Beginner', 'A2 - Elementary', 'B1 - Intermediate', 'B2 - Advanced'],
+    accentColor: '#8b5cf6',
+    flagInfo: {
+      colors: ['#AA151B', '#F1BF00', '#AA151B'],
+      colorNamesHindi: 'लाल • सुनहरा पीला • लाल (Rojigualda)',
+      countryNameHindi: 'स्पेन व लैटिन अमेरिका (Spain)',
+      pattern: 'horizontal-stripes',
+      gradientCss: 'from-red-600 via-amber-400 to-red-600'
+    }
+  },
+  {
+    id: 'hindi',
+    name: 'Hindi (हिन्दी)',
+    nativeName: 'हिन्दी',
+    flag: '🇮🇳',
+    direction: 'ltr',
+    scriptName: 'Devanagari (देवनागरी)',
+    description: 'Explore formal and conversational Hindi, polite honorifics (आप/तुम), and poetic idioms.',
+    levels: ['A1 - Absolute Beginner', 'A2 - Elementary', 'B1 - Intermediate', 'B2 - Advanced'],
+    accentColor: '#f59e0b',
+    flagInfo: {
+      colors: ['#FF9933', '#FFFFFF', '#138808', '#000080'],
+      colorNamesHindi: 'केसरिया • सफेद • हरा • नीला चक्र (Tiranga)',
+      countryNameHindi: 'भारत (India)',
+      pattern: 'horizontal-stripes',
+      gradientCss: 'from-orange-500 via-slate-100 to-emerald-600'
+    }
   }
 ];
 

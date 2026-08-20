@@ -29,9 +29,12 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({ currentLanguage 
 
   const activeCard = cards[currentIndex] || cards[0];
 
-  // Audio Playback
-  const handleSpeak = (text: string) => {
-    playNativePronunciation(text, currentLanguage.id, { rate: 0.85 });
+  // Audio Playback with Android hardening
+  const handleSpeak = (text: string, phoneticHint?: string) => {
+    playNativePronunciation(text, currentLanguage.id, { 
+      rate: 0.85,
+      phoneticHint: phoneticHint || activeCard?.phoneticHindi || activeCard?.phonetic
+    });
   };
 
   const handleNext = () => {

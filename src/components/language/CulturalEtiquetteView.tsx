@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { LanguageConfig } from '../../data/languageCurriculum';
 import { CULTURAL_ARTICLES, CulturalArticle } from '../../data/culturalGuideData';
+import { CountryFlagVisual, CountryFlagStripeBar, CountryFlagPaletteTag } from '../common/CountryFlagVisual';
 import { 
   ShieldCheck, 
   CheckCircle2, 
@@ -13,7 +14,8 @@ import {
   Building2, 
   AlertTriangle,
   FileText,
-  BadgeHelp
+  BadgeHelp,
+  Flag
 } from 'lucide-react';
 import { playNativePronunciation } from '../../utils/audioPlayer';
 
@@ -70,48 +72,84 @@ export const CulturalEtiquetteView: React.FC<CulturalEtiquetteViewProps> = ({ cu
   return (
     <div className="space-y-6">
       
-      {/* Top Banner - Worker Friendly Hindi Header */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <ShieldCheck className="w-5 h-5 text-amber-400" />
-            <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">
-              प्रशिक्षण निदेशालय उ०प्र० • प्रवासी सुरक्षा व कानून मार्गदर्शन
-            </span>
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-            विदेश के नियम, कानून एवं सुरक्षा (Rules & Safety)
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl">
-            {currentLanguage.name} भाषी देशों में सुरक्षित काम, पासपोर्ट व वीज़ा अधिकार, साइट सेफ्टी और जरूरी कानूनी सावधानियां।
-          </p>
-        </div>
+      {/* Top Banner - Worker Friendly Hindi Header with Country Flag Colors */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+        {/* Continuous Flag Stripe Bar */}
+        {currentLanguage.flagInfo && (
+          <CountryFlagStripeBar flagInfo={currentLanguage.flagInfo} heightClass="h-2" roundedClass="rounded-none" />
+        )}
+        
+        <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-amber-400" />
+                <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">
+                  प्रशिक्षण निदेशालय उ०प्र० • प्रवासी सुरक्षा व कानून मार्गदर्शन
+                </span>
+              </div>
+              {currentLanguage.flagInfo && (
+                <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-950 border border-slate-700 text-xs">
+                  <CountryFlagVisual flagInfo={currentLanguage.flagInfo} size="sm" />
+                  <span className="text-[11px] font-bold text-slate-200">{currentLanguage.flagInfo.countryNameHindi}</span>
+                </div>
+              )}
+            </div>
 
-        <div className="bg-slate-950/80 border border-amber-500/30 px-4 py-2.5 rounded-xl flex items-center gap-3 shrink-0">
-          <Building2 className="w-6 h-6 text-amber-400" />
-          <div className="text-left">
-            <div className="text-[11px] font-bold text-amber-400">भारतीय दूतावास सहायता</div>
-            <div className="text-xs text-white font-mono">MADAD / PBSA सेवा</div>
+            <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-2">
+              <span>{currentLanguage.flag}</span>
+              <span>विदेश के नियम, कानून एवं सुरक्षा ({currentLanguage.name})</span>
+            </h2>
+            
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <p className="text-xs sm:text-sm text-slate-300 max-w-2xl">
+                {currentLanguage.name} भाषी देशों में सुरक्षित काम, पासपोर्ट व वीज़ा अधिकार, साइट सेफ्टी और जरूरी कानूनी सावधानियां।
+              </p>
+              {currentLanguage.flagInfo && (
+                <CountryFlagPaletteTag flagInfo={currentLanguage.flagInfo} className="bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800" />
+              )}
+            </div>
+          </div>
+
+          <div className="bg-slate-950/80 border border-amber-500/30 px-4 py-2.5 rounded-xl flex items-center gap-3 shrink-0">
+            <Building2 className="w-6 h-6 text-amber-400" />
+            <div className="text-left">
+              <div className="text-[11px] font-bold text-amber-400">भारतीय दूतावास सहायता</div>
+              <div className="text-xs text-white font-mono">MADAD / PBSA सेवा</div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Main Overseas Guide Card */}
       {activeArticle && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
-          
-          {/* Section Category Header */}
-          <div className="space-y-2 border-b border-slate-800 pb-5">
-            <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-400/10 px-3 py-1 rounded-full border border-emerald-500/20">
-              {activeArticle.categoryHindi}
-            </span>
-            <h3 className="text-xl sm:text-2xl font-black text-white">
-              {activeArticle.titleHindi}
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-300 font-medium">
-              {activeArticle.subtitleHindi}
-            </p>
-          </div>
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl space-y-6">
+          {/* Subtle Flag Stripe */}
+          {currentLanguage.flagInfo && (
+            <CountryFlagStripeBar flagInfo={currentLanguage.flagInfo} heightClass="h-1.5" roundedClass="rounded-none" />
+          )}
+          <div className="p-6 sm:p-8 pt-2 space-y-6">
+            
+            {/* Section Category Header */}
+            <div className="space-y-2 border-b border-slate-800 pb-5">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-400/10 px-3 py-1 rounded-full border border-emerald-500/20">
+                  {activeArticle.categoryHindi}
+                </span>
+                {currentLanguage.flagInfo && (
+                  <span className="text-[11px] font-bold text-amber-300 bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-400/20 flex items-center gap-1.5">
+                    <Flag className="w-3 h-3" />
+                    <span>राष्ट्रीय रंग: {currentLanguage.flagInfo.colorNamesHindi}</span>
+                  </span>
+                )}
+              </div>
+              <h3 className="text-xl sm:text-2xl font-black text-white">
+                {activeArticle.titleHindi}
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-300 font-medium">
+                {activeArticle.subtitleHindi}
+              </p>
+            </div>
 
           {/* Hero Safety Quote / Proverb */}
           {activeArticle.heroQuote && (
@@ -263,6 +301,7 @@ export const CulturalEtiquetteView: React.FC<CulturalEtiquetteViewProps> = ({ cu
             </div>
           )}
 
+          </div>
         </div>
       )}
 

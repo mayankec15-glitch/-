@@ -166,9 +166,12 @@ export const ScriptStudioView: React.FC<ScriptStudioViewProps> = ({ currentLangu
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   };
 
-  // Audio Playback
-  const handleSpeak = (text: string) => {
-    playNativePronunciation(text, currentLanguage.id, { rate: 0.85 });
+  // Audio Playback with Android hardening
+  const handleSpeak = (text: string, phoneticHint?: string) => {
+    playNativePronunciation(text, currentLanguage.id, { 
+      rate: 0.85,
+      phoneticHint: phoneticHint || selectedChar.examplePhoneticHindi || selectedChar.phoneticHindi
+    });
   };
 
   return (

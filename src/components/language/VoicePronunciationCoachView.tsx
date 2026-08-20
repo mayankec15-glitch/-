@@ -6,11 +6,13 @@ import {
   MigrantVocabItem, 
   VocabLanguageDetail 
 } from '../../data/migrantVocabData';
-import { playNativePronunciation, stopNativeAudio } from '../../utils/audioPlayer';
+import { CountryFlagVisual, CountryFlagStripeBar, CountryFlagPaletteTag } from '../common/CountryFlagVisual';
+import { playNativePronunciation, stopNativeAudio, testSpeakerSound, unlockAudioEngine } from '../../utils/audioPlayer';
 import { 
   Mic, 
   MicOff, 
   Volume2, 
+  VolumeX,
   Sparkles, 
   Award, 
   CheckCircle2, 
@@ -33,7 +35,8 @@ import {
   Smile,
   Sprout,
   Car,
-  AlertTriangle
+  AlertTriangle,
+  HelpCircle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { haptics } from '../../utils/haptics';
@@ -215,11 +218,16 @@ export const VoicePronunciationCoachView: React.FC<VoicePronunciationCoachViewPr
     };
   }, []);
 
-  // Handle Native Speech Synthesis (Audio Playback with fallback & Arabic sanitization)
-  const playNativeAudio = (text: string, rate: number = speechSpeed) => {
+  const [isTestingSpeaker, setIsTestingSpeaker] = useState<boolean>(false);
+  const [speakerTestSuccess, setSpeakerTestSuccess] = useState<boolean | null>(null);
+  const [showVolumeGuide, setShowVolumeGuide] = useState<boolean>(false);
+
+  // Handle Native Speech Synthesis (Audio Playback with fallback & Arabic sanitization & Android hardening)
+  const playNativeAudio = (text: string, rate: number = speechSpeed, phoneticFallback?: string) => {
     setIsPlayingAudio(true);
     playNativePronunciation(text, currentLanguage.id, {
       rate: rate,
+      phoneticHint: phoneticFallback || langDetail.phoneticHindi || langDetail.examplePhoneticHindi,
       onStart: () => setIsPlayingAudio(true),
       onEnd: () => setIsPlayingAudio(false),
       onError: (err) => {
@@ -227,6 +235,28 @@ export const VoicePronunciationCoachView: React.FC<VoicePronunciationCoachViewPr
         setIsPlayingAudio(false);
       }
     });
+  };
+
+  // Run Quick Speaker Sound Test
+  const handleTestSpeakerSound = async () => {
+    setIsTestingSpeaker(true);
+    setSpeakerTestSuccess(null);
+    haptics.tap();
+    await testSpeakerSound(
+      () => {
+        setIsTestingSpeaker(false);
+        setSpeakerTestSuccess(true);
+        haptics.success();
+      },
+      () => {
+        setIsTestingSpeaker(false);
+        setSpeakerTestSuccess(false);
+        haptics.warning();
+      }
+    );
+    setTimeout(() => {
+      setIsTestingSpeaker(false);
+    }, 2000);
   };
 
   // Run Fast AI Evaluation
@@ -264,78 +294,95 @@ export const VoicePronunciationCoachView: React.FC<VoicePronunciationCoachViewPr
     setIsEvaluating(true);
     setEvaluation(null);
 
-    // Realistic local evaluation fallback builder
-    const buildInstantLocalScore = () => {
-      const target = (langDetail.word || "").toLowerCase().replace(/[^\w\u0600-\u06FF\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, "");
-      const spoken = textToCheck.toLowerCase().replace(/[^\w\u0600-\u06FF\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, "");
-      
+    // Realistic multi-script local evaluation builder (Instant 0ms response)
+    const buildInstantLocalScore = (spokenText: string) => {
+      const normalize = (str: string) => 
+        (str || "")
+          .toLowerCase()
+          .replace(/[^\w\u0600-\u06FF\u0900-\u097F\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, "")
+          .trim();
+
+      const target = normalize(langDetail.word || "");
+      const hindiTarget = normalize(langDetail.phoneticHindi || "");
+      const spoken = normalize(spokenText);
+
       let matchScore = 20;
-      if (target && spoken) {
-        if (target === spoken) {
-          matchScore = 96;
-        } else if (spoken.includes(target) || target.includes(spoken)) {
-          const lenRatio = Math.min(spoken.length, target.length) / Math.max(spoken.length, target.length, 1);
-          matchScore = Math.round(75 + lenRatio * 20); // 75-95
-        } else {
-          // Levenshtein edit distance
-          const m = target.length;
-          const n = spoken.length;
-          const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
-          for (let i = 0; i <= m; i++) dp[i][0] = i;
-          for (let j = 0; j <= n; j++) dp[0][j] = j;
 
-          for (let i = 1; i <= m; i++) {
-            for (let j = 1; j <= n; j++) {
-              const cost = target[i - 1] === spoken[j - 1] ? 0 : 1;
-              dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
-            }
-          }
+      const calcSim = (s1: string, s2: string): number => {
+        if (!s1 || !s2) return 0;
+        if (s1 === s2) return 1.0;
+        if (s2.includes(s1) || s1.includes(s2)) {
+          return 0.85 + (Math.min(s1.length, s2.length) / Math.max(s1.length, s2.length)) * 0.15;
+        }
+        const m = s1.length;
+        const n = s2.length;
+        const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+        for (let i = 0; i <= m; i++) dp[i][0] = i;
+        for (let j = 0; j <= n; j++) dp[0][j] = j;
 
-          const dist = dp[m][n];
-          const maxLen = Math.max(m, n, 1);
-          const simRatio = Math.max(0, 1 - dist / maxLen);
-
-          if (simRatio >= 0.8) {
-            matchScore = Math.round(85 + (simRatio - 0.8) * 55);
-          } else if (simRatio >= 0.5) {
-            matchScore = Math.round(60 + (simRatio - 0.5) * 80);
-          } else if (simRatio >= 0.25) {
-            matchScore = Math.round(35 + (simRatio - 0.25) * 100);
-          } else {
-            matchScore = Math.max(10, Math.round(simRatio * 100));
+        for (let i = 1; i <= m; i++) {
+          for (let j = 1; j <= n; j++) {
+            const cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
+            dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
           }
         }
+        const dist = dp[m][n];
+        return Math.max(0, 1 - dist / Math.max(m, n));
+      };
+
+      const simTarget = calcSim(target, spoken);
+      const simHindi = calcSim(hindiTarget, spoken);
+      const maxSim = Math.max(simTarget, simHindi);
+
+      if (maxSim >= 0.95) {
+        matchScore = Math.round(92 + (maxSim - 0.95) * 160);
+      } else if (maxSim >= 0.75) {
+        matchScore = Math.round(82 + (maxSim - 0.75) * 50);
+      } else if (maxSim >= 0.5) {
+        matchScore = Math.round(62 + (maxSim - 0.5) * 80);
+      } else if (maxSim >= 0.25) {
+        matchScore = Math.round(35 + (maxSim - 0.25) * 108);
+      } else {
+        matchScore = Math.max(12, Math.round(maxSim * 120));
       }
 
-      const isGood = matchScore >= 75;
-      const isAvg = matchScore >= 50;
+      matchScore = Math.min(Math.max(matchScore, 5), 100);
+
+      const isGood = matchScore >= 78;
+      const isAvg = matchScore >= 55;
+
+      const syllables = (langDetail.phoneticHindi || langDetail.word).split(/[\s-]+/).filter(Boolean);
+      const syllableBreakdown = syllables.map((s: string, idx: number) => {
+        const isCorrect = isGood || (isAvg && idx % 2 === 0);
+        return {
+          syllable: s,
+          correct: isCorrect,
+          tip: isCorrect ? "सटीक ध्वनि" : "थोड़ा और स्पष्ट बोलें"
+        };
+      });
 
       return {
         accuracyScore: matchScore,
-        fluencyScore: Math.max(0, matchScore - 5),
+        fluencyScore: Math.max(10, matchScore - 4),
         grade: matchScore >= 90 ? 'A+' : matchScore >= 80 ? 'A' : matchScore >= 60 ? 'B' : matchScore >= 40 ? 'C' : 'D',
         feedbackInHindi: isGood 
-          ? `शानदार प्रयास! आपका उच्चारण बहुत अच्छा और स्पष्ट है। (${langDetail.phoneticHindi}) को इसी तरह बोलें।`
+          ? `शानदार उच्चारण! आपने बहुत स्पष्ट और सटीक आवाज़ में बोला है। (${langDetail.phoneticHindi}) पर आपकी पकड़ मजबूत है।`
           : isAvg
-          ? `मध्यम प्रयास। ध्वनि में थोड़ा अंतर है। (${langDetail.phoneticHindi}) को 1-2 बार और सुनकर बोलें।`
-          : `गलत उच्चारण। आपने बोला: "${textToCheck}" जबकि सही उच्चारण (${langDetail.phoneticHindi}) है। कृपया ध्वनि सुनकर पुनः प्रयास करें।`,
+          ? `अच्छा प्रयास! ध्वनि में थोड़ा सा अंतर है। सही उच्चारण (${langDetail.phoneticHindi}) को एक बार और सुनकर बोलें।`
+          : `उच्चारण में सुधार की जरूरत है। आपने बोला: "${spokenText}" जबकि सही उच्चारण (${langDetail.phoneticHindi}) है। ध्वनि बटन दबाकर सुनिए।`,
         phoneticGuideHindi: langDetail.phoneticHindi,
-        syllableBreakdown: (langDetail.phoneticHindi || langDetail.word).split(/[\s-]+/).map((s: string) => ({
-          syllable: s,
-          correct: matchScore >= 70,
-          tip: matchScore >= 70 ? 'स्पष्ट' : 'सुधारें'
-        })),
-        soundTipsHindi: matchScore >= 75
-          ? 'आवाज को स्थिर और मध्यम गति में रखें।'
-          : `शब्द को धीरे और स्पष्ट बोलें: "${langDetail.phoneticHindi || langDetail.word}"`,
-        workplaceContextHindi: `कार्यस्थल पर यह "${currentItem.hindiTerm}" के लिए आवश्यक शब्द है।`,
+        syllableBreakdown: syllableBreakdown.length > 0 ? syllableBreakdown : [{ syllable: langDetail.phoneticHindi || langDetail.word, correct: isGood, tip: isGood ? 'सटीक' : 'सुधारें' }],
+        soundTipsHindi: isGood
+          ? 'कार्यस्थल पर इसी आत्मविश्वास और गति के साथ बातचीत करें।'
+          : `अक्षर-दर-अक्षर धीरे बोलें: "${langDetail.phoneticHindi || langDetail.word}"`,
+        workplaceContextHindi: `कार्यस्थल पर "${currentItem.hindiTerm}" का उपयोग बातचीत व निर्देश के लिए किया जाता है।`,
         isFallback: true
       };
     };
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3200); // 3.2-second hard timeout for ultra-fast response
+      const timeoutId = setTimeout(() => controller.abort(), 1200); // Ultra-fast 1.2s network window
 
       const res = await fetch('/api/voice-pronunciation-eval', {
         method: 'POST',
@@ -379,7 +426,7 @@ export const VoicePronunciationCoachView: React.FC<VoicePronunciationCoachViewPr
           setTestScore(prev => prev + score);
         }
       } else {
-        const local = buildInstantLocalScore();
+        const local = buildInstantLocalScore(textToCheck);
         setEvaluation(local);
         if (local.accuracyScore >= 80) {
           haptics.success();
@@ -388,8 +435,8 @@ export const VoicePronunciationCoachView: React.FC<VoicePronunciationCoachViewPr
         }
       }
     } catch (error) {
-      console.warn('Evaluation fallback to instant score:', error);
-      const local = buildInstantLocalScore();
+      // Instant graceful fallback with zero user-perceptible lag
+      const local = buildInstantLocalScore(textToCheck);
       setEvaluation(local);
       if (local.accuracyScore >= 80) {
         haptics.success();
@@ -526,132 +573,193 @@ export const VoicePronunciationCoachView: React.FC<VoicePronunciationCoachViewPr
     <div className="space-y-6">
       
       {/* Official Directorate of Training UP Header Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-blue-950/40 to-slate-900 border border-amber-500/30 rounded-2xl p-4 sm:p-6 shadow-2xl relative overflow-hidden">
+      <div className="bg-gradient-to-r from-slate-900 via-blue-950/40 to-slate-900 border border-amber-500/30 rounded-2xl overflow-hidden shadow-2xl relative">
+        {/* Top Flag Stripe Ribbon */}
+        {currentLanguage.flagInfo && (
+          <CountryFlagStripeBar flagInfo={currentLanguage.flagInfo} heightClass="h-2" roundedClass="rounded-none" />
+        )}
         <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
         
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
-          <div className="flex items-start sm:items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0 shadow-inner">
-              <Mic className="w-6 h-6 animate-pulse" />
-            </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[11px] font-bold">
-                  प्रशिक्षण निदेशालय, उत्तर प्रदेश
-                </span>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">
-                  द्रुत AI उच्चारण जांच (Fast 4-5s Evaluation)
-                </span>
+        <div className="p-4 sm:p-6 space-y-4 relative z-10">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0 shadow-inner">
+                <Mic className="w-6 h-6 animate-pulse" />
               </div>
-              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight mt-1">
-                प्रवासी श्रमिक बोलकर भाषा अभ्यास एवं AI उच्चारण जांच
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-300 font-medium">
-                विदेशी या अन्य राज्यों में रोजगार हेतु जाने वाले श्रमिक अपनी मातृभाषा (हिंदी) में उच्चारण सुनकर बोलें और तुरंत 4-5 सेकंड में AI फीडबैक पाएं।
-              </p>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[11px] font-bold">
+                    प्रशिक्षण निदेशालय, उत्तर प्रदेश
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">
+                    द्रुत AI उच्चारण जांच (Fast 4-5s Evaluation)
+                  </span>
+                  {currentLanguage.flagInfo && (
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-950 border border-slate-700 text-[11px] font-bold text-slate-200">
+                      <CountryFlagVisual flagInfo={currentLanguage.flagInfo} size="sm" />
+                      <span>{currentLanguage.flagInfo.countryNameHindi}</span>
+                    </div>
+                  )}
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight mt-1">
+                  प्रवासी श्रमिक बोलकर भाषा अभ्यास एवं AI उच्चारण जांच
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-300 font-medium">
+                  {currentLanguage.name} भाषी देशों में कार्य हेतु जाने वाले श्रमिक अपनी मातृभाषा (हिंदी) में उच्चारण सुनकर बोलें और तुरंत AI फीडबैक पाएं।
+                </p>
+              </div>
+            </div>
+
+            {/* Timer Duration & Test Controls */}
+            <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
+              {/* Speech Test Timer Duration Picker */}
+              <div className="flex items-center gap-1 bg-slate-950 border border-slate-800 rounded-xl p-1 text-xs">
+                <Clock className="w-3.5 h-3.5 text-amber-400 ml-1.5" />
+                <span className="text-slate-400 text-[11px] font-bold pr-1">टेस्ट समय:</span>
+                <button
+                  onClick={() => setTimerDuration(4)}
+                  className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${
+                    timerDuration === 4 
+                      ? 'bg-amber-500 text-slate-950 font-black' 
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  4 सेकंड
+                </button>
+                <button
+                  onClick={() => setTimerDuration(5)}
+                  className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${
+                    timerDuration === 5 
+                      ? 'bg-amber-500 text-slate-950 font-black' 
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  5 सेकंड
+                </button>
+              </div>
+
+              <button
+                onClick={() => {
+                  setTestMode(!testMode);
+                  setEvaluation(null);
+                  setTestedCount(0);
+                  setTestScore(0);
+                }}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  testMode 
+                    ? 'bg-emerald-500 text-slate-950 font-black shadow-lg shadow-emerald-500/20' 
+                    : 'bg-slate-950 text-slate-300 hover:text-white border border-slate-800'
+                }`}
+              >
+                <Award className="w-4 h-4" />
+                <span>{testMode ? '✓ टेस्ट मोड सक्रिय' : '🎯 10-शब्द टेस्ट मोड'}</span>
+              </button>
+
+              {/* Speaker Test & Android Audio Unlocker Button */}
+              <button
+                onClick={handleTestSpeakerSound}
+                disabled={isTestingSpeaker}
+                title="फोन पर स्पीकर आवाज जांचें"
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                  isTestingSpeaker
+                    ? 'bg-amber-500 text-slate-950 border-amber-400 animate-pulse font-black'
+                    : speakerTestSuccess
+                    ? 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40'
+                    : 'bg-slate-950 text-amber-300 border-amber-500/30 hover:bg-amber-500/10'
+                }`}
+              >
+                <Volume2 className={`w-3.5 h-3.5 ${isTestingSpeaker ? 'animate-bounce' : ''}`} />
+                <span>{isTestingSpeaker ? 'ध्वनि बज रही है...' : speakerTestSuccess ? '✓ स्पीकर चालू' : '🔊 स्पीकर टेस्ट'}</span>
+              </button>
+
+              <button
+                onClick={() => setShowVolumeGuide(!showVolumeGuide)}
+                className="p-2 rounded-xl bg-slate-950 text-slate-400 hover:text-white border border-slate-800 transition-all cursor-pointer"
+                title="आवाज संबंधी सहायता (Volume Guide)"
+              >
+                <HelpCircle className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
 
-          {/* Timer Duration & Test Controls */}
-          <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
-            {/* Speech Test Timer Duration Picker */}
-            <div className="flex items-center gap-1 bg-slate-950 border border-slate-800 rounded-xl p-1 text-xs">
-              <Clock className="w-3.5 h-3.5 text-amber-400 ml-1.5" />
-              <span className="text-slate-400 text-[11px] font-bold pr-1">टेस्ट समय:</span>
-              <button
-                onClick={() => setTimerDuration(4)}
-                className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${
-                  timerDuration === 4 
-                    ? 'bg-amber-500 text-slate-950 font-black' 
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                4 सेकंड
-              </button>
-              <button
-                onClick={() => setTimerDuration(5)}
-                className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${
-                  timerDuration === 5 
-                    ? 'bg-amber-500 text-slate-950 font-black' 
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                5 सेकंड
-              </button>
+          {/* Android Speaker & Media Volume Helper Banner */}
+          {showVolumeGuide && (
+            <div className="p-3.5 rounded-xl bg-slate-950 border border-amber-500/30 space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 font-bold text-amber-300">
+                  <Volume2 className="w-4 h-4" />
+                  <span>📱 फोन पर आवाज नहीं आने पर उपाय (Android Speaker Guide):</span>
+                </div>
+                <button
+                  onClick={() => setShowVolumeGuide(false)}
+                  className="text-slate-400 hover:text-white text-xs font-bold"
+                >
+                  ✕ बंद करें
+                </button>
+              </div>
+              <ul className="list-disc list-inside space-y-1 text-slate-300 text-[11px] leading-relaxed">
+                <li><strong className="text-white">मीडिया वॉल्यूम जांचें:</strong> फोन के वॉल्यूम बटन दबाकर 'Media Volume' बढ़ाएं (केवल रिंगटोन वॉल्यूम नहीं)।</li>
+                <li><strong className="text-white">साइलेंट / DND मोड:</strong> यदि फोन साइलेंट या वाइब्रेशन पर है, तो उसे हटाएं।</li>
+                <li><strong className="text-white">ब्लूटूथ / ईयरफोन:</strong> यदि ब्लूटूथ ईयरफोन कनेक्टेड हैं, तो आवाज उसमें जा रही हो सकती है।</li>
+                <li><strong className="text-white">स्पीकर टेस्ट बटन:</strong> ऊपर '🔊 स्पीकर टेस्ट' बटन दबाने से फोन का ऑडियो सिस्टम तुरंत अनलॉक हो जाता है।</li>
+              </ul>
             </div>
+          )}
 
-            <button
-              onClick={() => {
-                setTestMode(!testMode);
-                setEvaluation(null);
-                setTestedCount(0);
-                setTestScore(0);
-              }}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                testMode 
-                  ? 'bg-emerald-500 text-slate-950 font-black shadow-lg shadow-emerald-500/20' 
-                  : 'bg-slate-950 text-slate-300 hover:text-white border border-slate-800'
-              }`}
-            >
-              <Award className="w-4 h-4" />
-              <span>{testMode ? '✓ टेस्ट मोड सक्रिय' : '🎯 10-शब्द टेस्ट मोड'}</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Dropdowns Bar: Trade Category Dropdown & Word Jump Dropdown */}
-        <div className="mt-4 pt-4 border-t border-slate-800/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          
-          {/* Trade Category Dropdown */}
-          <div className="flex items-center gap-2">
-            <label htmlFor="select-trade-category" className="text-xs font-bold text-slate-400 whitespace-nowrap">
-              कार्य क्षेत्र (Trade):
-            </label>
-            <select
-              id="select-trade-category"
-              value={selectedTrade}
-              onChange={(e) => {
-                setSelectedTrade(e.target.value);
-                setActiveItemIndex(0);
-                setEvaluation(null);
-              }}
-              className="bg-slate-950 text-amber-300 font-bold border border-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-amber-400 cursor-pointer w-full sm:w-auto"
-            >
-              <option value="all">🌐 समस्त 12 कार्य क्षेत्र (All {MIGRANT_VOCABULARY_150.length}+ Words)</option>
-              {TRADE_CATEGORIES.map(trade => (
-                <option key={trade.id} value={trade.id}>
-                  {trade.nameHindi} ({trade.nameEnglish})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Quick Word Jumper Dropdown */}
-          <div className="flex items-center gap-2">
-            <label htmlFor="select-word-jump" className="text-xs font-bold text-slate-400 whitespace-nowrap">
-              शब्द चुनें (Jump to Word):
-            </label>
-            <select
-              id="select-word-jump"
-              value={activeItemIndex}
-              onChange={(e) => {
-                setActiveItemIndex(Number(e.target.value));
-                setEvaluation(null);
-                setRecognizedTranscript('');
-              }}
-              className="bg-slate-950 text-white font-mono font-bold border border-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-amber-400 cursor-pointer w-full sm:w-auto max-w-[240px] truncate"
-            >
-              {filteredVocab.map((item, idx) => {
-                const tr = item.translations[langKey] || item.translations['english'];
-                return (
-                  <option key={item.id} value={idx}>
-                    #{idx + 1}: {tr.word} — {item.hindiTerm}
+          {/* Dropdowns Bar: Trade Category Dropdown & Word Jump Dropdown */}
+          <div className="pt-3 border-t border-slate-800/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            
+            {/* Trade Category Dropdown */}
+            <div className="flex items-center gap-2">
+              <label htmlFor="select-trade-category" className="text-xs font-bold text-slate-400 whitespace-nowrap">
+                कार्य क्षेत्र (Trade):
+              </label>
+              <select
+                id="select-trade-category"
+                value={selectedTrade}
+                onChange={(e) => {
+                  setSelectedTrade(e.target.value);
+                  setActiveItemIndex(0);
+                  setEvaluation(null);
+                }}
+                className="bg-slate-950 text-amber-300 font-bold border border-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-amber-400 cursor-pointer w-full sm:w-auto"
+              >
+                <option value="all">🌐 समस्त 12 कार्य क्षेत्र (All {MIGRANT_VOCABULARY_150.length}+ Words)</option>
+                {TRADE_CATEGORIES.map(trade => (
+                  <option key={trade.id} value={trade.id}>
+                    {trade.nameHindi} ({trade.nameEnglish})
                   </option>
-                );
-              })}
-            </select>
-          </div>
+                ))}
+              </select>
+            </div>
 
+            {/* Quick Word Jumper Dropdown */}
+            <div className="flex items-center gap-2">
+              <label htmlFor="select-word-jump" className="text-xs font-bold text-slate-400 whitespace-nowrap">
+                शब्द चुनें (Jump to Word):
+              </label>
+              <select
+                id="select-word-jump"
+                value={activeItemIndex}
+                onChange={(e) => {
+                  setActiveItemIndex(Number(e.target.value));
+                  setEvaluation(null);
+                  setRecognizedTranscript('');
+                }}
+                className="bg-slate-950 text-white font-mono font-bold border border-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-amber-400 cursor-pointer w-full sm:w-auto max-w-[240px] truncate"
+              >
+                {filteredVocab.map((item, idx) => {
+                  const tr = item.translations[langKey] || item.translations['english'];
+                  return (
+                    <option key={item.id} value={idx}>
+                      #{idx + 1}: {tr.word} — {item.hindiTerm}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+
+          </div>
         </div>
       </div>
 
@@ -662,57 +770,71 @@ export const VoicePronunciationCoachView: React.FC<VoicePronunciationCoachViewPr
         <div className="lg:col-span-7 space-y-6">
           
           {/* Active Phrase Card */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl relative">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl relative">
+            {/* Top Flag Stripe on Active Card */}
+            {currentLanguage.flagInfo && (
+              <CountryFlagStripeBar flagInfo={currentLanguage.flagInfo} heightClass="h-1.5" roundedClass="rounded-none" />
+            )}
             
-            {/* Top Navigation & Counter */}
-            <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-800">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-lg bg-slate-950 text-amber-400 border border-slate-800">
-                  शब्द {activeItemIndex + 1} / {filteredVocab.length}
-                </span>
-                <span className="text-xs font-medium text-slate-400">
-                  {TRADE_CATEGORIES.find(t => t.id === currentItem.tradeId)?.nameHindi}
-                </span>
+            <div className="p-5 sm:p-6 space-y-4">
+              {/* Top Navigation & Counter */}
+              <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-lg bg-slate-950 text-amber-400 border border-slate-800">
+                    शब्द {activeItemIndex + 1} / {filteredVocab.length}
+                  </span>
+                  <span className="text-xs font-medium text-slate-400">
+                    {TRADE_CATEGORIES.find(t => t.id === currentItem.tradeId)?.nameHindi}
+                  </span>
+                </div>
+
+                {/* Speech Speed Control */}
+                <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-lg p-1">
+                  <button
+                    onClick={() => setSpeechSpeed(0.7)}
+                    className={`px-2 py-0.5 rounded text-[11px] font-bold ${speechSpeed === 0.7 ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}
+                    title="धीमी गति (Slow 0.7x)"
+                  >
+                    🐢 धीमा
+                  </button>
+                  <button
+                    onClick={() => setSpeechSpeed(0.9)}
+                    className={`px-2 py-0.5 rounded text-[11px] font-bold ${speechSpeed === 0.9 ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}
+                    title="सामान्य गति (Normal 0.9x)"
+                  >
+                    🔊 सामान्य
+                  </button>
+                </div>
               </div>
 
-              {/* Speech Speed Control */}
-              <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-lg p-1">
-                <button
-                  onClick={() => setSpeechSpeed(0.7)}
-                  className={`px-2 py-0.5 rounded text-[11px] font-bold ${speechSpeed === 0.7 ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}
-                  title="धीमी गति (Slow 0.7x)"
-                >
-                  🐢 धीमा
-                </button>
-                <button
-                  onClick={() => setSpeechSpeed(0.9)}
-                  className={`px-2 py-0.5 rounded text-[11px] font-bold ${speechSpeed === 0.9 ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}
-                  title="सामान्य गति (Normal 0.9x)"
-                >
-                  🔊 सामान्य
-                </button>
-              </div>
-            </div>
+              {/* Target Foreign Word in Big Typography */}
+              <div className="text-center py-3 sm:py-5 space-y-3">
+                <div className="text-xs font-mono font-bold text-slate-300 uppercase tracking-widest flex items-center justify-center gap-2">
+                  {currentLanguage.flagInfo ? (
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-950 border border-slate-800">
+                      <CountryFlagVisual flagInfo={currentLanguage.flagInfo} size="sm" />
+                      <span className="text-amber-300 font-bold">{currentLanguage.name}</span>
+                      <span className="text-[10px] text-slate-400 font-normal">({currentLanguage.flagInfo.colorNamesHindi})</span>
+                    </div>
+                  ) : (
+                    <span>{currentLanguage.flag} {currentLanguage.name}</span>
+                  )}
+                </div>
+                
+                <div className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight" dir={currentLanguage.direction}>
+                  {langDetail.word}
+                </div>
 
-            {/* Target Foreign Word in Big Typography */}
-            <div className="text-center py-4 sm:py-6 space-y-3">
-              <div className="text-xs font-mono font-bold text-slate-400 uppercase tracking-widest flex items-center justify-center gap-1.5">
-                <span>{currentLanguage.flag} {currentLanguage.name}</span>
-              </div>
-              
-              <div className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight" dir={currentLanguage.direction}>
-                {langDetail.word}
-              </div>
+                {/* Devanagari Hindi Phonetic Transliteration */}
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 font-bold text-sm sm:text-base">
+                  <span>देवनागरी उच्चारण:</span>
+                  <span className="text-white font-mono">{langDetail.phoneticHindi}</span>
+                </div>
 
-              {/* Devanagari Hindi Phonetic Transliteration */}
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 font-bold text-sm sm:text-base">
-                <span>देवनागरी उच्चारण:</span>
-                <span className="text-white font-mono">{langDetail.phoneticHindi}</span>
-              </div>
-
-              {/* Hindi Meaning Badge */}
-              <div className="text-sm sm:text-base font-semibold text-slate-300">
-                हिंदी अर्थ: <span className="text-emerald-400 font-bold">{currentItem.hindiTerm}</span> ({currentItem.englishTerm})
+                {/* Hindi Meaning Badge */}
+                <div className="text-sm sm:text-base font-semibold text-slate-300">
+                  हिंदी अर्थ: <span className="text-emerald-400 font-bold">{currentItem.hindiTerm}</span> ({currentItem.englishTerm})
+                </div>
               </div>
 
               {/* Audio Listen Buttons */}
