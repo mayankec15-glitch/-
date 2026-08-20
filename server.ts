@@ -911,78 +911,170 @@ app.post("/api/voice-pronunciation-eval", async (req, res) => {
     tradeCategory,
   } = req.body;
 
-  const target = (targetPhrase || "").toLowerCase().trim();
-  const spoken = (spokenPhrase || targetPhrase || "").toLowerCase().trim();
+  const target = (targetPhrase || "").trim();
+  const spoken = (spokenPhrase || "").trim();
 
-  // Fast calculation of similarity
-  let matchScore = 86;
-  if (target === spoken) {
-    matchScore = 96;
-  } else if (spoken.includes(target) || target.includes(spoken)) {
-    matchScore = 90;
-  } else {
-    // Check character overlap
-    let matchChars = 0;
-    for (const char of spoken) {
-      if (target.includes(char)) matchChars++;
-    }
-    const ratio = matchChars / Math.max(target.length, 1);
-    matchScore = Math.min(95, Math.max(72, Math.round(ratio * 100)));
+  // If user spoke NOTHING or remained silent:
+  if (!spoken) {
+    return res.json({
+      success: true,
+      data: {
+        accuracyScore: 0,
+        fluencyScore: 0,
+        grade: "अपूर्ण",
+        noSpeech: true,
+        feedbackInHindi: "कोई आवाज़ दर्ज नहीं हुई! कृपया माइक बटन दबाकर शब्द को स्पष्ट आवाज़ में बोलें।",
+        phoneticGuideHindi: targetPhoneticHindi || targetPhrase,
+        syllableBreakdown: (targetPhoneticHindi || targetPhrase).split(/[\s-]+/).map((s: string) => ({
+          syllable: s,
+          correct: false,
+          tip: "बोलें"
+        })),
+        soundTipsHindi: "माइक चालू होने पर 4-5 सेकंड के भीतर बोलें।",
+        workplaceContextHindi: `उच्चारण की जांच के लिए आवाज़ का दर्ज होना आवश्यक है। "${hindiMeaning || 'कार्यस्थल'}" का सही उच्चारण सीखें।`
+      }
+    });
   }
+
+  // Fast calculation of accurate similarity
+  const normTarget = target.toLowerCase().replace(/[^\w\u0600-\u06FF\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, "");
+  const normSpoken = spoken.toLowerCase().replace(/[^\w\u0600-\u06FF\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, "");
+
+  let matchScore = 20; // Default baseline for unrelated speech
+
+  if (normTarget && normSpoken) {
+    if (normTarget === normSpoken) {
+      matchScore = 96;
+    } else if (normSpoken.includes(normTarget) || normTarget.includes(normSpoken)) {
+      const lenRatio = Math.min(normSpoken.length, normTarget.length) / Math.max(normSpoken.length, normTarget.length, 1);
+      matchScore = Math.round(75 + lenRatio * 20); // 75 - 95
+    } else {
+      // Levenshtein edit distance
+      const m = normTarget.length;
+      const n = normSpoken.length;
+      const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+      for (let i = 0; i <= m; i++) dp[i][0] = i;
+      for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+      for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+          const cost = normTarget[i - 1] === normSpoken[j - 1] ? 0 : 1;
+          dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+        }
+      }
+
+      const dist = dp[m][n];
+      const maxLen = Math.max(m, n, 1);
+      const simRatio = Math.max(0, 1 - dist / maxLen);
+      
+      if (simRatio >= 0.8) {
+        matchScore = Math.round(85 + (simRatio - 0.8) * 55); // 85 - 96
+      } else if (simRatio >= 0.5) {
+        matchScore = Math.round(60 + (simRatio - 0.5) * 80); // 60 - 84
+      } else if (simRatio >= 0.25) {
+        matchScore = Math.round(35 + (simRatio - 0.25) * 100); // 35 - 60
+      } else {
+        matchScore = Math.max(10, Math.round(simRatio * 100)); // 10 - 25
+      }
+    }
+  }
+
+  const isGood = matchScore >= 75;
+  const isAvg = matchScore >= 50;
 
   const fastFallbackData = {
     accuracyScore: matchScore,
-    fluencyScore: Math.max(70, matchScore - 4),
-    grade: matchScore >= 90 ? "A+" : matchScore >= 80 ? "A" : "B",
-    feedbackInHindi: matchScore >= 85 
-      ? `शानदार प्रयास! आपका उच्चारण बहुत स्पष्ट और शुद्ध है। ${targetPhoneticHindi ? `(${targetPhoneticHindi})` : ''} को इसी तरह धाराप्रवाह बोलें।`
-      : `अच्छा प्रयास! ध्वनि को थोड़ा और स्पष्ट करें। ${targetPhoneticHindi ? `(${targetPhoneticHindi})` : ''} को 1-2 बार और बोलकर अभ्यास करें।`,
+    fluencyScore: Math.max(0, matchScore - 5),
+    grade: matchScore >= 90 ? "A+" : matchScore >= 80 ? "A" : matchScore >= 60 ? "B" : matchScore >= 40 ? "C" : "D",
+    feedbackInHindi: isGood 
+      ? `शानदार प्रयास! आपका उच्चारण बहुत अच्छा और स्पष्ट है। (${targetPhoneticHindi || targetPhrase}) को इसी तरह धाराप्रवाह बोलें।`
+      : isAvg
+      ? `मध्यम प्रयास। ध्वनि में कुछ भिन्नता है। सही उच्चारण (${targetPhoneticHindi || targetPhrase}) को 1-2 बार और बोलकर अभ्यास करें।`
+      : `उच्चारण में सुधार की आवश्यकता है। आपने बोला: "${spoken}" जबकि सही उच्चारण (${targetPhoneticHindi || targetPhrase}) है। कृपया ध्वनि सुनकर पुनः प्रयास करें।`,
     phoneticGuideHindi: targetPhoneticHindi || targetPhrase,
     syllableBreakdown: (targetPhoneticHindi || targetPhrase).split(/[\s-]+/).map((s: string) => ({
       syllable: s,
-      correct: true,
-      tip: "स्पष्ट ध्वनि"
+      correct: matchScore >= 70,
+      tip: matchScore >= 70 ? "स्पष्ट ध्वनि" : "सुधारें"
     })),
-    soundTipsHindi: "आवाज को स्थिर और मध्यम गति में रखें ताकि सामने वाला व्यक्ति आसानी से समझ सके।",
-    workplaceContextHindi: `कार्यस्थल पर यह वाक्य "${hindiMeaning || 'दैनिक कार्य'}" के लिए उपयोग किया जाता है।`
+    soundTipsHindi: matchScore >= 75
+      ? "आवाज को स्थिर और मध्यम गति में रखें ताकि सामने वाला व्यक्ति आसानी से समझ सके।"
+      : `शब्द को धीरे और स्पष्ट बोलें: "${targetPhoneticHindi || targetPhrase}"`,
+    workplaceContextHindi: `कार्यस्थल पर यह शब्द "${hindiMeaning || 'दैनिक कार्य'}" के लिए उपयोग किया जाता है।`
   };
 
   try {
-    const systemPrompt = `You are a fast AI Language Pronunciation Coach for UP Migrant Workers. Return concise JSON:
+    const systemPrompt = `You are an expert AI Language Pronunciation and Phonetics Coach for Indian Migrant Workers (Bhashadoot).
+Evaluate the user's spoken pronunciation strictly and constructively.
+
+Compare:
+Target: "${targetPhrase}" (${language})
+Expected Hindi Phonetics: "${targetPhoneticHindi}"
+Spoken by user: "${spoken}"
+
+Scoring Guidelines:
+- If the spoken input is completely unrelated, gibberish, or a totally wrong word: Accuracy must be between 10 and 35.
+- If it's a rough or partial attempt: Accuracy must be between 40 and 65.
+- If it is close with minor phonetic accent: Accuracy must be between 70 and 85.
+- If it is accurate or native-like: Accuracy must be between 88 and 98.
+
+Return concise JSON:
 {
-  "accuracyScore": 90,
-  "fluencyScore": 88,
-  "grade": "A+",
-  "feedbackInHindi": "बहुत बढ़िया उच्चारण!",
+  "accuracyScore": number (0-100),
+  "fluencyScore": number (0-100),
+  "grade": "A+" | "A" | "B" | "C" | "D",
+  "feedbackInHindi": "1-2 lines constructive guidance in simple Hindi",
   "phoneticGuideHindi": "${targetPhoneticHindi || targetPhrase}",
-  "syllableBreakdown": [{"syllable": "शब्द", "correct": true, "tip": "स्पष्ट"}],
-  "soundTipsHindi": "आवाज साफ रखें।",
-  "workplaceContextHindi": "कार्यस्थल उपयोगिता।"
+  "syllableBreakdown": [{"syllable": "part", "correct": boolean, "tip": "tip in Hindi"}],
+  "soundTipsHindi": "Practical tip in Hindi on mouth movement or tone",
+  "workplaceContextHindi": "Practical workplace sentence in Hindi"
 }`;
 
-    const contents = `Target: "${targetPhrase}" (${language}), Expected Hindi: "${targetPhoneticHindi}", Spoken: "${spokenPhrase}"`;
+    const contents = `Target Word: "${targetPhrase}", Expected Pronunciation: "${targetPhoneticHindi}", User Spoke: "${spoken}"`;
 
-    // 2.0s fast timeout promise
+    // 2.2s fast timeout promise
     const geminiPromise = callGeminiWithRetry({
       systemInstruction: systemPrompt,
       contents: contents,
     });
 
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("Fast timeout")), 2200)
+      setTimeout(() => reject(new Error("Fast timeout")), 2400)
     );
 
     const rawText = (await Promise.race([geminiPromise, timeoutPromise])) as string;
     const parsed = cleanAndParseJson(rawText);
-    res.json({ success: true, data: parsed });
+    
+    if (parsed && typeof parsed.accuracyScore === 'number') {
+      return res.json({ success: true, data: parsed });
+    }
+    
+    res.json({ success: true, data: fastFallbackData, isFallback: true });
   } catch (error: any) {
-    // Fast instant response
+    // Fast instant response with calculated score
     res.json({
       success: true,
       data: fastFallbackData,
       isFallback: true
     });
   }
+});
+
+// Google Play Store / Android TWA Digital Asset Links verification endpoint
+app.get("/.well-known/assetlinks.json", (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  res.json([
+    {
+      relation: ["delegate_permission/common.handle_all_urls"],
+      target: {
+        namespace: "android_app",
+        package_name: "in.gov.up.training.bhashadoot",
+        sha256_cert_fingerprints: [
+          "14:6D:E9:7D:6D:64:DF:7B:6C:54:19:9C:57:9F:8B:5B:3F:8A:96:A2:72:DE:0D:3D:25:EB:98:90:3E:04:8F:C8"
+        ]
+      }
+    }
+  ]);
 });
 
 // Vite middleware setup

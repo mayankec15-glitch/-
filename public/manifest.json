@@ -1,0 +1,45 @@
+{
+  "short_name": "भाषादूत (Bhashadoot)",
+  "name": "भाषादूत - प्रशिक्षण निदेशालय, उत्तर प्रदेश (Bhashadoot Portal)",
+  "description": "भाषादूत - प्रवासी श्रमिक एवं आईटीआई छात्रों के लिए बहुभाषी AI भाषा शिक्षण, 150+ कार्य शब्दावली व बोलकर उच्चारण जांच पोर्टल",
+  "id": "/?source=pwa",
+  "start_url": "/",
+  "scope": "/",
+  "background_color": "#020617",
+  "theme_color": "#d97706",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "categories": ["education", "productivity", "utilities"],
+  "lang": "hi-IN",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='36' fill='%23d97706'/><circle cx='96' cy='96' r='68' fill='%230f172a'/><text x='96' y='116' font-size='60' text-anchor='middle' fill='%23fef08a'>🇮🇳</text></svg>",
+      "type": "image/svg+xml",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='96' fill='%23d97706'/><circle cx='256' cy='256' r='180' fill='%230f172a'/><text x='256' y='310' font-size='160' text-anchor='middle' fill='%23fef08a'>🇮🇳</text></svg>",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "AI Voice Quiz",
+      "short_name": "Voice Quiz",
+      "description": "Start speaking test and pronunciation score",
+      "url": "/?tab=pronunciation",
+      "icons": [{ "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><circle cx='48' cy='48' r='44' fill='%23d97706'/><text x='48' y='60' font-size='38' text-anchor='middle'>🎙️</text></svg>", "sizes": "96x96" }]
+    },
+    {
+      "name": "Vocabulary Lab",
+      "short_name": "Vocab",
+      "description": "150+ Technical & Safety Vocabulary",
+      "url": "/?tab=vocabulary",
+      "icons": [{ "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><circle cx='48' cy='48' r='44' fill='%23059669'/><text x='48' y='60' font-size='38' text-anchor='middle'>📖</text></svg>", "sizes": "96x96" }]
+    }
+  ]
+}
+

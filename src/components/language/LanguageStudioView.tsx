@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { SUPPORTED_LANGUAGES, LanguageConfig } from '../../data/languageCurriculum';
+import { MigrantVocabItem } from '../../data/migrantVocabData';
 import { AiRoleplayView } from './AiRoleplayView';
 import { GrammarLabView } from './GrammarLabView';
 import { FlashcardsView } from './FlashcardsView';
@@ -62,6 +63,7 @@ export const LanguageStudioView: React.FC = () => {
   const [selectedLang, setSelectedLang] = useState<LanguageConfig>(SUPPORTED_LANGUAGES[0]);
   const [activeSubTab, setActiveSubTab] = useState<LanguageSubTab>('voice-coach');
   const [isLangGridExpanded, setIsLangGridExpanded] = useState<boolean>(true);
+  const [selectedVocabForTest, setSelectedVocabForTest] = useState<MigrantVocabItem | null>(null);
   
   // Dropdown states
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState<boolean>(false);
@@ -158,10 +160,10 @@ export const LanguageStudioView: React.FC = () => {
     { 
       id: 'vocab-150', 
       stepNumber: 2,
-      shortTitleHindi: '150 काम व अभिवादन शब्द',
-      fullTitleHindi: '२. 150 काम व सामान्य अभिवादन शब्द (150 Words & Greetings)', 
-      simpleExplanation: 'नमस्ते/सलाम/हालचाल, सीमेंट, औजार, अस्पताल, होटल, गाड़ी व फैक्ट्री के जरूरी शब्द व अर्थ',
-      englishSub: 'Trade & Daily Greetings Vocab',
+      shortTitleHindi: '200+ काम व अभिवादन शब्द',
+      fullTitleHindi: '२. 200+ काम व सामान्य अभिवादन शब्द (200+ Words & Greetings)', 
+      simpleExplanation: 'जापानी (200+ शब्द), नमस्ते/शिष्टाचार, निर्माण, 5S, मशीनिंग, देखभाल, होटल, गाड़ी व कृषि के जरूरी शब्द',
+      englishSub: 'Trade & Daily Greetings Vocab (200+)',
       icon: BookMarked 
     },
     { 
@@ -671,7 +673,7 @@ export const LanguageStudioView: React.FC = () => {
                   <span>प्रशिक्षण भाग चुनें</span>
                 </div>
                 <p className="text-[11px] text-slate-300">
-                  ८ प्रशिक्षण भागों (उच्चारण जांच, 150 शब्द, बातचीत, व्याकरण) में से जो सीखना चाहें उस पर टैप करें।
+                  ८ प्रशिक्षण भागों (उच्चारण जांच, 200+ शब्द, बातचीत, व्याकरण) में से जो सीखना चाहें उस पर टैप करें।
                 </p>
               </div>
 
@@ -708,13 +710,17 @@ export const LanguageStudioView: React.FC = () => {
 
         {/* View Routing */}
         {activeSubTab === 'voice-coach' && (
-          <VoicePronunciationCoachView currentLanguage={selectedLang} />
+          <VoicePronunciationCoachView 
+            currentLanguage={selectedLang} 
+            selectedVocabItem={selectedVocabForTest}
+          />
         )}
 
         {activeSubTab === 'vocab-150' && (
           <MigrantVocabBankView 
             currentLanguage={selectedLang}
-            onSelectForVoiceTest={(_item) => {
+            onSelectForVoiceTest={(item) => {
+              setSelectedVocabForTest(item);
               setActiveSubTab('voice-coach');
             }}
           />

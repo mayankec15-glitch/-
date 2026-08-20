@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { LanguageConfig, RoleplayScenario, ROLEPLAY_SCENARIOS } from '../../data/languageCurriculum';
 import { playNativePronunciation } from '../../utils/audioPlayer';
+import { haptics } from '../../utils/haptics';
 import { 
   Send, 
   Bot, 
@@ -133,9 +134,17 @@ export const AiRoleplayView: React.FC<AiRoleplayViewProps> = ({ currentLanguage 
       else if (currentLanguage.id === 'spanish') recognition.lang = 'es-ES';
       else recognition.lang = 'hi-IN';
 
-      recognition.onstart = () => setIsListening(true);
-      recognition.onend = () => setIsListening(false);
-      recognition.onerror = () => setIsListening(false);
+      recognition.onstart = () => {
+        haptics.startRecording();
+        setIsListening(true);
+      };
+      recognition.onend = () => {
+        haptics.stopRecording();
+        setIsListening(false);
+      };
+      recognition.onerror = () => {
+        setIsListening(false);
+      };
       recognition.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript;
         setInputMessage(transcript);
@@ -151,6 +160,8 @@ export const AiRoleplayView: React.FC<AiRoleplayViewProps> = ({ currentLanguage 
   const handleSendMessage = async (textToSend?: string) => {
     const text = (textToSend || inputMessage).trim();
     if (!text || isLoading) return;
+
+    haptics.tap();
 
     const userMsg: MessageItem = {
       id: `user-${Date.now()}`,
@@ -181,6 +192,7 @@ export const AiRoleplayView: React.FC<AiRoleplayViewProps> = ({ currentLanguage 
 
       const json = await res.json();
       if (json.success && json.data) {
+        haptics.success();
         const aiData = json.data;
         const aiMsg: MessageItem = {
           id: `ai-${Date.now()}`,

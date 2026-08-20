@@ -79,37 +79,38 @@ export const TRADE_CATEGORIES: TradeCategory[] = [
     icon: 'ShieldAlert',
     descriptionHindi: 'पुलिस, एम्बुलेंस, दुर्घटना, आग व भारतीय दूतावास हेल्पलाइन',
     color: 'from-red-600 to-rose-700'
+  },
+  {
+    id: 'agriculture',
+    nameHindi: 'कृषि व पॉलीहाउस खेती',
+    nameEnglish: 'Agriculture & Farming',
+    icon: 'Sprout',
+    descriptionHindi: 'फसल कटाई, पॉलीहाउस, खाद, सिंचाई व कृषि उपकरण',
+    color: 'from-emerald-600 to-green-700'
+  },
+  {
+    id: 'automotive',
+    nameHindi: 'ऑटोमोबाइल व मैकेनिक',
+    nameEnglish: 'Automotive & Mechanic',
+    icon: 'Car',
+    descriptionHindi: 'इंजन ऑयल, ब्रेक, टायर, बैटरी व वाहन फिटनेस',
+    color: 'from-cyan-600 to-blue-700'
+  },
+  {
+    id: 'safety_signs',
+    nameHindi: 'सुरक्षा संकेत व कार्यस्थल नियम',
+    nameEnglish: 'Safety Signs & Regulations',
+    icon: 'AlertTriangle',
+    descriptionHindi: 'प्रवेश निषेध, धूम्रपान निषेध, हेलमेट व हाई वोल्टेज',
+    color: 'from-amber-600 to-red-600'
   }
 ];
 
-export interface VocabLanguageDetail {
-  word: string;
-  phoneticHindi: string;
-  phoneticLatin?: string;
-  exampleSentence: string;
-  examplePhoneticHindi: string;
-  exampleSentenceHindi: string;
-}
+export * from './migrantVocabTypes';
+import { MigrantVocabItem } from './migrantVocabTypes';
+import { EXTENDED_MIGRANT_VOCABULARY } from './extendedVocabData';
 
-export interface MigrantVocabItem {
-  id: string;
-  tradeId: string;
-  hindiTerm: string;
-  englishTerm: string;
-  importance: 'critical' | 'high' | 'medium';
-  tags: string[];
-  translations: {
-    'uae-arabic': VocabLanguageDetail;
-    'german': VocabLanguageDetail;
-    'japanese': VocabLanguageDetail;
-    'english': VocabLanguageDetail;
-    'hebrew'?: VocabLanguageDetail;
-    'french': VocabLanguageDetail;
-    'spanish': VocabLanguageDetail;
-  };
-}
-
-export const MIGRANT_VOCABULARY_150: MigrantVocabItem[] = [
+const BASE_MIGRANT_VOCABULARY: MigrantVocabItem[] = [
   // -------------------------------------------------------------
   // TRADE 0: DAILY GREETINGS & COURTESIES (15 items)
   // -------------------------------------------------------------
@@ -3105,3 +3106,9 @@ export const MIGRANT_VOCABULARY_150: MigrantVocabItem[] = [
     }
   }
 ];
+
+export const MIGRANT_VOCABULARY_150: MigrantVocabItem[] = [
+  ...BASE_MIGRANT_VOCABULARY,
+  ...EXTENDED_MIGRANT_VOCABULARY
+];
+

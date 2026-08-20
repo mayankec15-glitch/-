@@ -257,132 +257,455 @@ export interface FlashcardItem {
   id: string;
   languageId: string;
   front: string;
+  phoneticHindi?: string;
   phonetic: string;
+  backHindi?: string;
   back: string;
+  categoryHindi?: string;
   category: string;
   level: string;
   exampleSentence: {
     target: string;
+    phoneticHindi?: string;
     phonetic: string;
+    translationHindi?: string;
     translation: string;
   };
+  notesHindi?: string;
   notes: string;
   streak: number;
   nextReviewDate?: string;
 }
 
 export const INITIAL_FLASHCARDS: FlashcardItem[] = [
+  // --- UAE / Gulf Arabic Flashcards ---
   {
     id: 'fc-uae-1',
     languageId: 'uae-arabic',
-    front: 'مَرْحَبَا السَّاعْ',
-    phonetic: "Marhaba al-saa'",
-    back: 'A warm Emirati welcome ("Welcome at this hour")',
-    category: 'Majlis & Greetings',
+    front: 'السَّلامُ عَلَيْكُمْ',
+    phoneticHindi: 'अस-सलामु अलैकुम',
+    phonetic: 'As-salaamu alaykum',
+    backHindi: 'आप पर शांति हो (नमस्ते / आदाब)',
+    back: 'Peace be upon you (Universal Greeting)',
+    categoryHindi: '👋 नमस्ते व अभिवादन',
+    category: 'Greetings',
     level: 'Beginner',
     exampleSentence: {
-      target: 'يَا مَرْحَبَا السَّاعْ بِالضُّيُوفْ الْكِرَامْ',
-      phonetic: "Ya marhaba al-saa' bil-duyoof al-kiraam",
-      translation: 'A most generous welcome to our honored guests!'
+      target: 'السَّلامُ عَلَيْكُمْ، صَبَاحُ الْخَيْرِ يَا صَاحِبِي',
+      phoneticHindi: 'अस-सलामु अलैकुम, सबाहुल खैरि या साहिबी',
+      phonetic: "As-salaamu alaykum, sabaah al-khayr ya saahibi",
+      translationHindi: 'नमस्ते, शुभ प्रभात मेरे साथी!',
+      translation: 'Peace be upon you, good morning my friend!'
     },
-    notes: 'Classic Emirati greeting used with heartfelt hospitality.',
-    streak: 2
+    notesHindi: 'गल्फ देशों में किसी से भी मिलते ही पहला शब्द यह बोलें। उत्तर में "व अलैकुम अस-सलाम" मिलता है।',
+    notes: 'Universal polite greeting in Gulf region.',
+    streak: 3
   },
   {
     id: 'fc-uae-2',
     languageId: 'uae-arabic',
-    front: 'وَايِدْ زَيْنْ',
-    phonetic: 'Wayed zayn',
-    back: 'Very good / Wonderful',
-    category: 'Daily Slang',
+    front: 'دِيرْ بَالِكْ',
+    phoneticHindi: 'दीर बालिक',
+    phonetic: 'Deer baalak',
+    backHindi: 'सावधान रहो! / ध्यान से! (सुरक्षा चेतावनी)',
+    back: 'Watch out / Be careful (Safety Warning)',
+    categoryHindi: '🦺 साइट सुरक्षा व सावधानी',
+    category: 'Safety & Tools',
     level: 'Beginner',
     exampleSentence: {
-      target: 'هَذَا الْمَشْرُوعْ وَايِدْ زَيْنْ وَمُهِمْ',
-      phonetic: 'Hada al-mashroo\' wayed zayn wa muhimm',
-      translation: 'This project is very good and important.'
+      target: 'دِيرْ بَالِكْ! هُنَاكَ كَرِينْ يَرْفَعُ حَمُولَةً',
+      phoneticHindi: 'दीर बालिक! हुनाका क्रेन यर्फ़उ हमूलतन',
+      phonetic: 'Deer baalak! Hunaaka crane yarfa\'u hamoolatan',
+      translationHindi: 'सावधान! वहाँ क्रेन भारी वजन उठा रही है।',
+      translation: 'Be careful! There is a crane lifting load there.'
     },
-    notes: '"Wayed" replaces "Katheeran" across the UAE and Gulf.',
-    streak: 3
+    notesHindi: 'साइट पर खतरा होने या भारी सामान हिलते समय यह चेतावनी सबसे ज्यादा बोली जाती है।',
+    notes: 'Critical safety phrase on construction and industrial sites.',
+    streak: 2
   },
   {
     id: 'fc-uae-3',
     languageId: 'uae-arabic',
-    front: 'فَالِكْ طَيِّبْ',
-    phonetic: 'Faalak tayyib',
-    back: 'Your wish is granted with joy! (Consider it done)',
-    category: 'Hospitality',
-    level: 'Intermediate',
-    exampleSentence: {
-      target: 'لا تَحَاتِي يَا صَاحِبِي، فَالِكْ طَيِّبْ',
-      phonetic: 'La thaati ya saahibi, faalak tayyib',
-      translation: 'Do not worry my friend, your wish is granted with pleasure!'
-    },
-    notes: 'Expressed when agreeing to help someone with full generosity.',
-    streak: 1
-  },
-  {
-    id: 'fc-fr-1',
-    languageId: 'french',
-    front: "S'il vous plaît",
-    phonetic: 'Seel voo pleh',
-    back: 'Please (Formal / Courteous)',
-    category: 'Politeness',
+    front: 'حَاضِرْ يَا مُعَلِّمْ',
+    phoneticHindi: 'हाज़िर या मुअल्लिम',
+    phonetic: "Haadir ya mu'allim",
+    backHindi: 'जी हाँ उस्ताद जी / काम हो जाएगा',
+    back: 'Yes Master / Ready to execute (Affirmative)',
+    categoryHindi: '🛠️ फोरमैन व काम का आदेश',
+    category: 'Workplace Orders',
     level: 'Beginner',
     exampleSentence: {
-      target: "Deux baguettes tradition, s'il vous plaît.",
-      phonetic: "Duh bah-get trah-dee-syohn, seel voo pleh.",
-      translation: 'Two traditional baguettes, please.'
+      target: 'حَاضِرْ يَا مُعَلِّمْ، سَأَبْدَأُ خَلْطَ الإِسْمَنْتِ حَالاً',
+      phoneticHindi: 'हाज़िर या मुअल्लिम, सबदउ खल्तल इसमंति हालन',
+      phonetic: "Haadir ya mu'allim, sa'abda'u khalt al-ismant haalan",
+      translationHindi: 'हाँ उस्ताद जी, मैं अभी तुरंत सीमेंट मिलाना शुरू करता हूँ।',
+      translation: 'Yes master, I will start mixing cement immediately.'
     },
-    notes: 'Use with waiters, strangers, and elders.',
+    notesHindi: 'फोरमैन या सीनियर मिस्त्री को "मुअल्लिम" (उस्ताद) कहकर बुलाना गल्फ में बहुत सम्मानजनक माना जाता है।',
+    notes: 'Respectful way to acknowledge work tasks from supervisors.',
     streak: 4
   },
   {
-    id: 'fc-fr-2',
-    languageId: 'french',
-    front: 'Du coup',
-    phonetic: 'Dew koo',
-    back: 'So / Consequently / Therefore',
-    category: 'Conversational Connectors',
-    level: 'Intermediate',
+    id: 'fc-uae-4',
+    languageId: 'uae-arabic',
+    front: 'خُوذَة وَحِذَاءُ السَّلامَة',
+    phoneticHindi: 'खूज़ा व हिज़ाउस-सलामा',
+    phonetic: "Khoodha wa hidha' as-salaama",
+    backHindi: 'सेफ्टी हेलमेट और सेफ्टी जूते',
+    back: 'Safety Helmet & Safety Shoes (PPE)',
+    categoryHindi: '🦺 साइट सुरक्षा व सावधानी',
+    category: 'Safety & Tools',
+    level: 'Beginner',
     exampleSentence: {
-      target: 'Du coup, on se retrouve au restaurant ce soir ?',
-      phonetic: 'Dew koo, ohn suh ruh-troov oh res-toh-rahn suh swahr?',
-      translation: 'So, are we meeting at the restaurant tonight?'
+      target: 'ارْتَدِ الْخُوذَةَ وَحِذَاءَ السَّلامَةِ قَبْلَ دُخُولِ الْمَوْقِعِ',
+      phoneticHindi: 'इर्तदिल खूज़ता व हिज़ाअस-सलामति कब्ल दुखूलिल मौकिअ',
+      phonetic: "Irtadi al-khoodhata wa hidha' as-salaamati qabla dukhooil al-mawqi'",
+      translationHindi: 'साइट में घुसने से पहले हेलमेट और सेफ्टी जूते पहनें।',
+      translation: 'Wear helmet and safety shoes before entering the site.'
     },
-    notes: 'The most popular spoken transition in contemporary France.',
-    streak: 2
+    notesHindi: 'गल्फ में बिना खूज़ा (हेलमेट) के साइट पर जाना कानूनी अपराध है और भारी जुर्माना हो सकता है।',
+    notes: 'Mandatory PPE items required on all Gulf job sites.',
+    streak: 3
   },
+  {
+    id: 'fc-uae-5',
+    languageId: 'uae-arabic',
+    front: 'الرَّاتِبْ وَالأُوفَرْتَايِمْ',
+    phoneticHindi: 'अर-रातिब वल-ओवरटाइम',
+    phonetic: 'Ar-raatib wal-overtime',
+    backHindi: 'महीने का वेतन और अतिरिक्त समय (सैलरी व ओवरटाइम)',
+    back: 'Monthly Salary & Overtime Allowance',
+    categoryHindi: '💵 वेतन, बैंक व इकामा',
+    category: 'Salary & Banking',
+    level: 'Beginner',
+    exampleSentence: {
+      target: 'مَتَى سَيَنْزِلُ الرَّاتِبُ فِي الْبَنْكِ يَا مُدِيرْ؟',
+      phoneticHindi: 'मता सयन्ज़िलुर रातिबु फिल बंकि या मुदीर?',
+      phonetic: 'Mata sayanzilu ar-raatibu fil banki ya mudeer?',
+      translationHindi: 'मैनेजर साहब, बैंक खाते में सैलरी कब तक आएगी?',
+      translation: 'When will the salary be deposited in the bank, manager?'
+    },
+    notesHindi: 'रातिब = पगार/मजदूरी। गल्फ में सैलरी WPS बैंक कार्ड में आती है।',
+    notes: 'Essential vocabulary for salary and compensation discussions.',
+    streak: 1
+  },
+
+  // --- Japanese Flashcards ---
   {
     id: 'fc-ja-1',
     languageId: 'japanese',
-    front: 'よろしくお願いします',
-    phonetic: 'Yoroshiku onegai shimasu',
-    back: 'Please treat me favorably / Looking forward to working together',
-    category: 'Omotenashi',
+    front: 'おはようございます',
+    phoneticHindi: 'ओहायो गोज़ाइमास',
+    phonetic: 'Ohayou gozaimasu',
+    backHindi: 'शुभ प्रभात / नमस्ते (सुबह का अभिवादन)',
+    back: 'Good morning (Polite Morning Greeting)',
+    categoryHindi: '👋 नमस्ते व अभिवादन',
+    category: 'Greetings',
     level: 'Beginner',
     exampleSentence: {
-      target: 'これからもどうぞよろしくお願いします。',
-      phonetic: 'Korekara mo douzo yoroshiku onegai shimasu.',
-      translation: 'Looking forward to our continued collaboration.'
+      target: '皆さん、おはようございます！今日も一日ご安全に！',
+      phoneticHindi: 'मिना-सान, ओहायो गोज़ाइमास! क्यो मो इचि-निचि गो-आन्ज़ेन नी!',
+      phonetic: 'Minasan, ohayou gozaimasu! Kyou mo ichi-nichi go-anzen ni!',
+      translationHindi: 'आप सभी को शुभ प्रभात! आज भी दिनभर सुरक्षित काम करें!',
+      translation: 'Good morning everyone! Stay safe at work all day today!'
     },
-    notes: 'Indispensable in daily Japanese business and social encounters.',
-    streak: 3
+    notesHindi: 'जापान में सुबह फैक्ट्री पहुंचते ही झुककर पूरे जोश के साथ यह बोलना सम्मान की निशानी है।',
+    notes: 'Standard morning greeting at factories and job sites in Japan.',
+    streak: 4
   },
   {
     id: 'fc-ja-2',
     languageId: 'japanese',
     front: 'お疲れ様でした',
+    phoneticHindi: 'ओत्सुकारेसामा देशिता',
     phonetic: 'Otsukaresama deshita',
-    back: 'Thank you for your hard work / Great job today',
-    category: 'Workplace & Daily',
+    backHindi: 'आज के कठिन परिश्रम के लिए बहुत-बहुत धन्यवाद!',
+    back: 'Thank you for your hard work today (Shift End)',
+    categoryHindi: '🏢 कार्यस्थल शिष्टाचार',
+    category: 'Workplace Etiquette',
     level: 'Beginner',
     exampleSentence: {
-      target: '皆さん、今日もお疲れ様でした！',
-      phonetic: 'Minasan, kyou mo otsukaresama deshita!',
-      translation: 'Everyone, thank you all for your great hard work today!'
+      target: '今日の作業は終了です。お疲れ様でした！',
+      phoneticHindi: 'क्यो नो साग्यो वा शूर्र्यो देस. ओत्सुकारेसामा देशिता!',
+      phonetic: 'Kyou no sagyou wa shuuryou desu. Otsukaresama deshita!',
+      translationHindi: 'आज का काम पूरा हुआ। आप सभी का बहुत धन्यवाद!',
+      translation: 'Today\'s work is complete. Thank you for your hard work!'
     },
-    notes: 'Said when leaving work or concluding an event.',
+    notesHindi: 'शाम को काम खत्म करके निकलते समय अपने साथी और सुपरवाइज़र को यह अवश्य बोलें।',
+    notes: 'Universal phrase said at the end of the shift or workday.',
     streak: 5
+  },
+  {
+    id: 'fc-ja-3',
+    languageId: 'japanese',
+    front: '安全帯とヘルメット',
+    phoneticHindi: 'आन्ज़ेन्ताई तो हेरुमेत्तो',
+    phonetic: 'Anzentai to herumetto',
+    backHindi: 'सेफ्टी बेल्ट (हार्नेस) और हेलमेट',
+    back: 'Safety Harness & Hard Hat (PPE)',
+    categoryHindi: '🦺 साइट सुरक्षा व सावधानी',
+    category: 'Safety & Tools',
+    level: 'Beginner',
+    exampleSentence: {
+      target: '高所作業では安全帯をフックに必ず掛けてください。',
+      phoneticHindi: 'कोउशो साग्यो देवा आन्ज़ेन्ताई ओ हुक्कु नी कानाराजु काकेते कुदासाइ.',
+      phonetic: 'Kousho sagyou dewa anzentai o fukku ni kanarazu kakete kudasai.',
+      translationHindi: 'ऊंचाई पर काम करते समय सेफ्टी बेल्ट का हुक अवश्य फंसाएं।',
+      translation: 'Please make sure to hook the safety harness during high work.'
+    },
+    notesHindi: 'जापान में कंस्ट्रक्शन और फैक्ट्री में "आन्ज़ेन दाइइची" (सुरक्षा पहले) का सख्त नियम है।',
+    notes: 'Crucial PPE gear for technical interns and construction workers in Japan.',
+    streak: 3
+  },
+  {
+    id: 'fc-ja-4',
+    languageId: 'japanese',
+    front: 'よろしくお願いします',
+    phoneticHindi: 'योरोशिकु ओनेगाइ शिमास',
+    phonetic: 'Yoroshiku onegai shimasu',
+    backHindi: 'कृपया मेरा मार्गदर्शन करें / आपके सहयोग की आशा है',
+    back: 'Please guide me / Looking forward to working together',
+    categoryHindi: '🏢 कार्यस्थल शिष्टाचार',
+    category: 'Workplace Etiquette',
+    level: 'Beginner',
+    exampleSentence: {
+      target: '今日から現場に入ります。よろしくお願いします！',
+      phoneticHindi: 'क्यो कारा गेम्बा नी हाइरिमास. योरोशिकु ओनेगाइ शिमास!',
+      phonetic: 'Kyou kara gemba ni hairimasu. Yoroshiku onegai shimasu!',
+      translationHindi: 'आज से मैं साइट पर काम शुरू कर रहा हूँ। कृपया मार्गदर्शन करें!',
+      translation: 'I am joining the site today. Looking forward to your guidance!'
+    },
+    notesHindi: 'जब भी किसी नए सुपरवाइज़र से मिलें या नया काम शुरू करें, यह वाक्य जरूर बोलें।',
+    notes: 'Essential introductory and cooperative phrase across all Japanese trades.',
+    streak: 4
+  },
+
+  // --- German Flashcards ---
+  {
+    id: 'fc-de-1',
+    languageId: 'german',
+    front: 'Guten Morgen',
+    phoneticHindi: 'गुटन मोर्गन',
+    phonetic: 'Goo-ten mor-gen',
+    backHindi: 'शुभ प्रभात / नमस्ते (सुबह का अभिवादन)',
+    back: 'Good morning (Polite Morning Greeting)',
+    categoryHindi: '👋 नमस्ते व अभिवादन',
+    category: 'Greetings',
+    level: 'Beginner',
+    exampleSentence: {
+      target: 'Guten Morgen Herr Meister, die Werkzeuge sind bereit.',
+      phoneticHindi: 'गुटन मोर्गन हेर माइस्टर, डी वेर्कत्ज़ॉइगे ज़िंद बेराइट.',
+      phonetic: 'Goo-ten mor-gen hehr my-ster, dee vehrk-tsoy-geh zint beh-ryte.',
+      translationHindi: 'नमस्ते उस्ताद जी, सभी औजार तैयार हैं।',
+      translation: 'Good morning master, the tools are ready.'
+    },
+    notesHindi: 'जर्मनी में सुबह 11 बजे तक "Guten Morgen" बोला जाता है।',
+    notes: 'Standard polite morning greeting in Germany.',
+    streak: 3
+  },
+  {
+    id: 'fc-de-2',
+    languageId: 'german',
+    front: 'Sicherheitsschuhe und Helm',
+    phoneticHindi: 'ज़िशरहाइट्स-शूहे उंड हेल्म',
+    phonetic: 'Zee-sher-hytes-shoo-heh oont helm',
+    backHindi: 'सुरक्षा जूते (स्टील टो) और हेलमेट',
+    back: 'Safety Shoes & Helmet (PPE)',
+    categoryHindi: '🦺 साइट सुरक्षा व सावधानी',
+    category: 'Safety & Tools',
+    level: 'Beginner',
+    exampleSentence: {
+      target: 'In der Werkstatt muss man immer Sicherheitsschuhe tragen.',
+      phoneticHindi: 'इन डेर वेर्कश्टाट मुस मान इम्मर ज़िशरहाइट्स-शूहे ट्रागेन.',
+      phonetic: 'In dehr vehrk-shtaht moos mahn im-mer zee-sher-hytes-shoo-heh trah-gen.',
+      translationHindi: 'वर्कशॉप में हमेशा सेफ्टी जूते पहनना अनिवार्य है।',
+      translation: 'In the workshop, you must always wear safety shoes.'
+    },
+    notesHindi: 'जर्मनी में बिना PSA (पर्सनल प्रोटेक्टिव इक्विपमेंट) के काम करना पूरी तरह मना है।',
+    notes: 'Mandatory PPE for technicians and mechanics in Germany.',
+    streak: 2
+  },
+  {
+    id: 'fc-de-3',
+    languageId: 'german',
+    front: 'Vorsicht! Gefahr!',
+    phoneticHindi: 'फोरज़िश्ट! गेफार!',
+    phonetic: 'For-zikht! Geh-fahr!',
+    backHindi: 'सावधान! यहाँ खतरा है!',
+    back: 'Caution! Danger! (Warning Sign)',
+    categoryHindi: '🦺 साइट सुरक्षा व सावधानी',
+    category: 'Safety & Tools',
+    level: 'Beginner',
+    exampleSentence: {
+      target: 'Vorsicht! Hochspannung an diesem Schaltkasten!',
+      phoneticHindi: 'फोरज़िश्ट! होखशपानूंग आन दीज़म शाल्टकास्टन!',
+      phonetic: 'For-zikht! Hohkh-shpan-noong ahn dee-zem shahlt-kahs-ten!',
+      translationHindi: 'सावधान! इस स्विचबोर्ड पर हाई वोल्टेज करंट है!',
+      translation: 'Caution! High voltage at this control box!'
+    },
+    notesHindi: 'फैक्ट्री या कंस्ट्रक्शन में पीले त्रिकोण वाले बोर्ड पर "Vorsicht" लिखा होता है।',
+    notes: 'Critical hazard warning term in German workshops.',
+    streak: 4
+  },
+
+  // --- Workplace English Flashcards ---
+  {
+    id: 'fc-en-1',
+    languageId: 'english',
+    front: 'Safety Harness & Double Lanyard',
+    phoneticHindi: 'सेफ्टी हार्नेस एंड डबल लैनयार्ड',
+    phonetic: 'Safety Harness & Double Lanyard',
+    backHindi: 'सुरक्षा बेल्ट (हार्नेस) और दोहरे हुक वाली रस्सी',
+    back: 'Full Body Fall Protection Harness & Double Lanyard',
+    categoryHindi: '🦺 साइट सुरक्षा व सावधानी',
+    category: 'Safety & Tools',
+    level: 'Beginner',
+    exampleSentence: {
+      target: 'Always hook your double lanyard when working on scaffolding above 2 meters.',
+      phoneticHindi: 'ऑलवेज़ हुक योर डबल लैनयार्ड व्हेन वर्किंग ऑन स्कैफोल्डिंग अबव 2 मीटर्स.',
+      phonetic: 'Always hook your double lanyard when working on scaffolding above 2 meters.',
+      translationHindi: '2 मीटर से ऊपर मचान पर काम करते समय हमेशा सेफ्टी हार्नेस का हुक फंसाएं।',
+      translation: 'Always hook your double lanyard when working on scaffolding above 2 meters.'
+    },
+    notesHindi: 'ऊंचाई पर काम (Working at Height) में सुरक्षा बेल्ट जीवन रक्षक है।',
+    notes: 'Standard 100% tie-off fall protection gear internationally.',
+    streak: 3
+  },
+  {
+    id: 'fc-en-2',
+    languageId: 'english',
+    front: 'Toolbox Talk (TBT)',
+    phoneticHindi: 'टूलबॉक्स टॉक (टी.बी.टी.)',
+    phonetic: 'Toolbox Talk',
+    backHindi: 'दैनिक 10 मिनट की सुरक्षा चर्चा व बैठक',
+    back: 'Daily Morning Pre-Shift Safety Briefing',
+    categoryHindi: '🦺 साइट सुरक्षा व सावधानी',
+    category: 'Safety & Tools',
+    level: 'Beginner',
+    exampleSentence: {
+      target: 'Attend the morning toolbox talk before starting any electrical or hot work.',
+      phoneticHindi: 'अटेंड द मॉर्निंग टूलबॉक्स टॉक बिफोर स्टार्टिंग एनी इलेक्ट्रिकल ऑर हॉट वर्क.',
+      phonetic: 'Attend the morning toolbox talk before starting any electrical or hot work.',
+      translationHindi: 'बिजली या वेल्डिंग का काम शुरू करने से पहले सुबह की टूलबॉक्स टॉक में भाग लें।',
+      translation: 'Attend the morning toolbox talk before starting any electrical or hot work.'
+    },
+    notesHindi: 'हर अंतरराष्ट्रीय साइट पर काम शुरू होने से पहले सेफ्टी ऑफिसर टूलबॉक्स टॉक लेते हैं।',
+    notes: 'Mandatory morning safety briefing on all mega projects.',
+    streak: 4
+  },
+  {
+    id: 'fc-en-3',
+    languageId: 'english',
+    front: 'Permit To Work (PTW)',
+    phoneticHindi: 'परमिट टू वर्क (पी.टी.डब्ल्यू.)',
+    phonetic: 'Permit To Work',
+    backHindi: 'कार्य करने की अनुमति पत्र (वर्क परमिट)',
+    back: 'Official Safety Authorization Document for Hazardous Tasks',
+    categoryHindi: '📝 वर्क परमिट व लेबर नियम',
+    category: 'Permits & Laws',
+    level: 'Beginner',
+    exampleSentence: {
+      target: 'Do not enter the confined space without a signed permit to work.',
+      phoneticHindi: 'डू नॉट एंटर द कन्फाइंड स्पेस विदाउट अ साइन्ड परमिट टू वर्क.',
+      phonetic: 'Do not enter the confined space without a signed permit to work.',
+      translationHindi: 'हस्ताक्षर युक्त वर्क परमिट के बिना बंद गड्ढे या टैंक में प्रवेश न करें।',
+      translation: 'Do not enter the confined space without a signed permit to work.'
+    },
+    notesHindi: 'वेल्डिंग, क्रेन और गड्ढे के काम के लिए इंजीनियर से परमिट साइन कराना जरूरी होता है।',
+    notes: 'Essential HSE documentation on all engineering projects.',
+    streak: 2
+  },
+
+  // --- French Flashcards ---
+  {
+    id: 'fc-fr-1',
+    languageId: 'french',
+    front: "S'il vous plaît",
+    phoneticHindi: 'सील वू प्ले',
+    phonetic: 'Seel voo pleh',
+    backHindi: 'कृपया (आदरपूर्वक)',
+    back: 'Please (Formal / Polite)',
+    categoryHindi: '👋 नमस्ते व अभिवादन',
+    category: 'Politeness',
+    level: 'Beginner',
+    exampleSentence: {
+      target: "Donnez-moi la clé à molette, s'il vous plaît.",
+      phoneticHindi: 'दोने-मुआ ला क्ले आ मोलेत, सील वू प्ले.',
+      phonetic: "Doh-nay mwah lah klay ah moh-leht, seel voo pleh.",
+      translationHindi: 'कृपया मुझे पाना (एडजस्टेबल रिंच) पकड़ा दीजिए।',
+      translation: 'Please hand me the adjustable wrench.'
+    },
+    notesHindi: 'फ्रांस में किसी से भी कोई औजार या मदद मांगते समय "सील वू प्ले" जरूर जोड़ें।',
+    notes: 'Essential politeness marker in French workplaces.',
+    streak: 4
+  },
+  {
+    id: 'fc-fr-2',
+    languageId: 'french',
+    front: 'Casque et Chaussures de sécurité',
+    phoneticHindi: 'कास्क ए शोस्स्यूर द सेक्यूरीते',
+    phonetic: 'Kahsk ay shoh-sewr duh say-kew-ree-tay',
+    backHindi: 'सेफ्टी हेलमेट और सुरक्षा जूते',
+    back: 'Safety Helmet & Steel-Toe Shoes (PPE)',
+    categoryHindi: '🦺 साइट सुरक्षा व सावधानी',
+    category: 'Safety & Tools',
+    level: 'Beginner',
+    exampleSentence: {
+      target: 'Le port du casque est obligatoire sur tout le chantier.',
+      phoneticHindi: 'ल पोर दु कास्क ए ओब्लीगात्वार सुर तू ल शाँतिए.',
+      phonetic: 'Luh por dew kahsk ay oh-blee-gah-twahr sewr too luh shahn-tyay.',
+      translationHindi: 'पूरी साइट पर सेफ्टी हेलमेट पहनना अनिवार्य है।',
+      translation: 'Wearing a safety helmet is mandatory across the whole site.'
+    },
+    notesHindi: 'फ्रांस के निर्माण स्थलों पर BTP सेफ्टी मानकों का पालन अनिवार्य है।',
+    notes: 'Mandatory PPE for construction and site workers in France.',
+    streak: 3
+  },
+
+  // --- Spanish Flashcards ---
+  {
+    id: 'fc-es-1',
+    languageId: 'spanish',
+    front: '¡Buenos días!',
+    phoneticHindi: 'ब्वेनोस दिआस!',
+    phonetic: 'Bweh-nohs dee-ahs!',
+    backHindi: 'शुभ प्रभात / नमस्ते!',
+    back: 'Good morning! (Universal Greeting)',
+    categoryHindi: '👋 नमस्ते व अभिवादन',
+    category: 'Greetings',
+    level: 'Beginner',
+    exampleSentence: {
+      target: '¡Buenos días Carlos! ¿Dónde están las herramientas?',
+      phoneticHindi: 'ब्वेनोस दिआस कार्लोस! दोंदे एस्तान लास एर्रामिएंतास?',
+      phonetic: 'Bweh-nohs dee-ahs Carlos! Dohn-day ehs-tahn lahs ehr-rah-myen-tahs?',
+      translationHindi: 'नमस्ते कार्लोस! औजार कहाँ रखे हैं?',
+      translation: 'Good morning Carlos! Where are the tools?'
+    },
+    notesHindi: 'स्पेनिश में सुबह 12 बजे तक नमस्ते के लिए "¡Buenos días!" बोलते हैं।',
+    notes: 'Standard morning greeting across Spain and Latin America.',
+    streak: 3
+  },
+  {
+    id: 'fc-es-2',
+    languageId: 'spanish',
+    front: '¡Cuidado! Peligro',
+    phoneticHindi: 'कुइदादो! पेलिग्रो',
+    phonetic: 'Kwee-dah-doh! Peh-lee-groh',
+    backHindi: 'सावधान! खतरा है!',
+    back: 'Careful! Danger! (Safety Alert)',
+    categoryHindi: '🦺 साइट सुरक्षा व सावधानी',
+    category: 'Safety & Tools',
+    level: 'Beginner',
+    exampleSentence: {
+      target: '¡Cuidado con la sierra circular!',
+      phoneticHindi: 'कुइदादो कोन ला सिएर्रा सर्कुलार!',
+      phonetic: 'Kwee-dah-doh kohn lah syeh-rrah seer-koo-lahr!',
+      translationHindi: 'गोल कटर आरी से सावधान रहें!',
+      translation: 'Be careful with the circular saw!'
+    },
+    notesHindi: 'वर्कशॉप में किसी को दुर्घटना से बचाने के लिए तुरंत "¡Cuidado!" बोलें।',
+    notes: 'Urgent danger warning term on Spanish job sites.',
+    streak: 4
   }
 ];
 

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LanguageConfig } from '../../data/languageCurriculum';
 import { Sparkles, ArrowRight, Volume2, BookOpen, Layers, Lightbulb, Search } from 'lucide-react';
 import { playNativePronunciation } from '../../utils/audioPlayer';
+import { haptics } from '../../utils/haptics';
 
 interface GrammarLabViewProps {
   currentLanguage: LanguageConfig;
@@ -46,6 +47,12 @@ export const GrammarLabView: React.FC<GrammarLabViewProps> = ({ currentLanguage 
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
+  // Sync sentence on language change
+  useEffect(() => {
+    setInputSentence(defaultSentences[currentLanguage.id] || 'مَرْحَبَا السَّاعْ');
+    setAnalysis(null);
+  }, [currentLanguage.id]);
+
   // Audio Playback
   const handleSpeak = (text: string) => {
     playNativePronunciation(text, currentLanguage.id, { rate: 0.85 });
@@ -55,6 +62,7 @@ export const GrammarLabView: React.FC<GrammarLabViewProps> = ({ currentLanguage 
     const text = (textToAnalyze || inputSentence).trim();
     if (!text) return;
 
+    haptics.tap();
     setIsLoading(true);
     try {
       const res = await fetch('/api/sentence-analyzer', {
@@ -68,6 +76,7 @@ export const GrammarLabView: React.FC<GrammarLabViewProps> = ({ currentLanguage 
 
       const json = await res.json();
       if (json.success && json.data) {
+        haptics.success();
         setAnalysis(json.data);
       }
     } catch (err) {

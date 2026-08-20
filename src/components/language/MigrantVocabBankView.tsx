@@ -26,7 +26,10 @@ import {
   Layers,
   ArrowUpRight,
   MessageSquare,
-  Smile
+  Smile,
+  Sprout,
+  Car,
+  AlertTriangle
 } from 'lucide-react';
 
 interface MigrantVocabBankViewProps {
@@ -97,6 +100,9 @@ export const MigrantVocabBankView: React.FC<MigrantVocabBankViewProps> = ({
       case 'Factory': return Factory;
       case 'Coins': return Coins;
       case 'ShieldAlert': return ShieldAlert;
+      case 'Sprout': return Sprout;
+      case 'Car': return Car;
+      case 'AlertTriangle': return AlertTriangle;
       default: return HardHat;
     }
   };
@@ -113,20 +119,20 @@ export const MigrantVocabBankView: React.FC<MigrantVocabBankViewProps> = ({
                 प्रशिक्षण निदेशालय, उत्तर प्रदेश
               </span>
               <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-bold">
-                150+ कार्य एवं सामान्य अभिवादन शब्दावली संग्रह
+                200+ कार्य एवं सामान्य अभिवादन शब्दावली संग्रह
               </span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight mt-1">
-              प्रवासी श्रमिक 150 कार्य एवं सामान्य अभिवादन शब्दावली (Trade & Greetings Vocab Bank)
+              प्रवासी श्रमिक 200+ कार्य एवं सामान्य अभिवादन शब्दावली (Trade & Greetings Vocab Bank)
             </h2>
             <p className="text-xs sm:text-sm text-slate-300 font-medium">
-              रोजगार हेतु सामान्य अभिवादन (नमस्ते, सलाम, धन्यवाद, हालचाल), निर्माण, देखभाल, होटल, ड्राइविंग व फैक्ट्री के सभी जरूरी शब्दों को देवनागरी उच्चारण व ऑडियो के साथ सीखें।
+              रोजगार हेतु जापानी (200+ शब्द), सामान्य अभिवादन, निर्माण, देखभाल (Kaigo), 5S, मशीनिंग, कृषि, ड्राइविंग, होटल व फैक्ट्री के सभी जरूरी शब्दों को देवनागरी उच्चारण व ऑडियो के साथ सीखें।
             </p>
           </div>
 
           <div className="flex items-center gap-2">
             <span className="text-xs font-mono font-bold px-3 py-1.5 rounded-xl bg-slate-950 text-amber-400 border border-slate-800">
-              कुल {filteredVocab.length} शब्द उपलब्ध
+              कुल {filteredVocab.length} / {MIGRANT_VOCABULARY_150.length} शब्द उपलब्ध
             </span>
           </div>
         </div>

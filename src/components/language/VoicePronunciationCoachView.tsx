@@ -30,12 +30,17 @@ import {
   Clock,
   Timer,
   MessageSquare,
-  Smile
+  Smile,
+  Sprout,
+  Car,
+  AlertTriangle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { haptics } from '../../utils/haptics';
 
 interface VoicePronunciationCoachViewProps {
   currentLanguage: LanguageConfig;
+  selectedVocabItem?: MigrantVocabItem | null;
 }
 
 interface EvaluationResult {
@@ -50,9 +55,18 @@ interface EvaluationResult {
   isFallback?: boolean;
 }
 
-export const VoicePronunciationCoachView: React.FC<VoicePronunciationCoachViewProps> = ({ currentLanguage }) => {
+export const VoicePronunciationCoachView: React.FC<VoicePronunciationCoachViewProps> = ({ 
+  currentLanguage,
+  selectedVocabItem
+}) => {
   const [selectedTrade, setSelectedTrade] = useState<string>('all');
-  const [activeItemIndex, setActiveItemIndex] = useState<number>(0);
+  const [activeItemIndex, setActiveItemIndex] = useState<number>(() => {
+    if (selectedVocabItem) {
+      const idx = MIGRANT_VOCABULARY_150.findIndex(item => item.id === selectedVocabItem.id);
+      return idx !== -1 ? idx : 0;
+    }
+    return 0;
+  });
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [recognizedTranscript, setRecognizedTranscript] = useState<string>('');
   const [manualInput, setManualInput] = useState<string>('');
@@ -93,6 +107,27 @@ export const VoicePronunciationCoachView: React.FC<VoicePronunciationCoachViewPr
     if (selectedTrade === 'all') return true;
     return item.tradeId === selectedTrade;
   });
+
+  // When a word is specifically selected from the Vocab Bank (e.g. Japanese word clicked)
+  useEffect(() => {
+    if (selectedVocabItem) {
+      setSelectedTrade('all');
+      const idx = MIGRANT_VOCABULARY_150.findIndex(item => item.id === selectedVocabItem.id);
+      if (idx !== -1) {
+        setActiveItemIndex(idx);
+      }
+      setEvaluation(null);
+      setRecognizedTranscript('');
+      setManualInput('');
+    }
+  }, [selectedVocabItem]);
+
+  // Reset evaluation state on language change without breaking active index
+  useEffect(() => {
+    setEvaluation(null);
+    setRecognizedTranscript('');
+    setManualInput('');
+  }, [currentLanguage.id]);
 
   const currentItem = filteredVocab[activeItemIndex] || filteredVocab[0] || MIGRANT_VOCABULARY_150[0];
   const langDetail: VocabLanguageDetail = currentItem.translations[langKey] || currentItem.translations['english'];
@@ -196,37 +231,103 @@ export const VoicePronunciationCoachView: React.FC<VoicePronunciationCoachViewPr
 
   // Run Fast AI Evaluation
   const handleEvaluate = async (spokenTextToUse?: string) => {
-    const textToCheck = spokenTextToUse || recognizedTranscriptRef.current || recognizedTranscript || manualInput || langDetail.word;
-    if (!textToCheck.trim()) return;
+    // Only use text that was actually spoken or typed. NEVER default to target word!
+    const textToCheck = (
+      (spokenTextToUse !== undefined 
+        ? spokenTextToUse 
+        : (recognizedTranscriptRef.current || recognizedTranscript || manualInput)) || ""
+    ).trim();
+
+    // If user stayed silent or no speech was captured
+    if (!textToCheck) {
+      haptics.warning();
+      setIsEvaluating(false);
+      setEvaluation({
+        accuracyScore: 0,
+        fluencyScore: 0,
+        grade: 'अपूर्ण',
+        noSpeech: true,
+        feedbackInHindi: 'कोई आवाज़ दर्ज नहीं हुई! कृपया माइक (🎤) बटन दबाएं और शब्द को स्पष्ट व ऊँची आवाज़ में बोलें।',
+        phoneticGuideHindi: langDetail.phoneticHindi || langDetail.word,
+        syllableBreakdown: (langDetail.phoneticHindi || langDetail.word).split(/[\s-]+/).map((s: string) => ({
+          syllable: s,
+          correct: false,
+          tip: 'बोलें'
+        })),
+        soundTipsHindi: 'माइक चालू होने के बाद 4-5 सेकंड के भीतर बोलें ताकि आपकी आवाज़ पहचानी जा सके।',
+        workplaceContextHindi: `उच्चारण की जांच के लिए आवाज़ का दर्ज होना आवश्यक है। "${currentItem.hindiTerm}" का अभ्यास करें।`,
+        isFallback: false
+      });
+      return;
+    }
 
     setIsEvaluating(true);
     setEvaluation(null);
 
-    // Instant local evaluation fallback builder
+    // Realistic local evaluation fallback builder
     const buildInstantLocalScore = () => {
-      const target = (langDetail.word || "").toLowerCase().trim();
-      const spoken = textToCheck.toLowerCase().trim();
-      let matchScore = 88;
-      if (target === spoken) {
-        matchScore = 96;
-      } else if (spoken.includes(target) || target.includes(spoken)) {
-        matchScore = 91;
-      } else {
-        matchScore = 85;
+      const target = (langDetail.word || "").toLowerCase().replace(/[^\w\u0600-\u06FF\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, "");
+      const spoken = textToCheck.toLowerCase().replace(/[^\w\u0600-\u06FF\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, "");
+      
+      let matchScore = 20;
+      if (target && spoken) {
+        if (target === spoken) {
+          matchScore = 96;
+        } else if (spoken.includes(target) || target.includes(spoken)) {
+          const lenRatio = Math.min(spoken.length, target.length) / Math.max(spoken.length, target.length, 1);
+          matchScore = Math.round(75 + lenRatio * 20); // 75-95
+        } else {
+          // Levenshtein edit distance
+          const m = target.length;
+          const n = spoken.length;
+          const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+          for (let i = 0; i <= m; i++) dp[i][0] = i;
+          for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+          for (let i = 1; i <= m; i++) {
+            for (let j = 1; j <= n; j++) {
+              const cost = target[i - 1] === spoken[j - 1] ? 0 : 1;
+              dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+            }
+          }
+
+          const dist = dp[m][n];
+          const maxLen = Math.max(m, n, 1);
+          const simRatio = Math.max(0, 1 - dist / maxLen);
+
+          if (simRatio >= 0.8) {
+            matchScore = Math.round(85 + (simRatio - 0.8) * 55);
+          } else if (simRatio >= 0.5) {
+            matchScore = Math.round(60 + (simRatio - 0.5) * 80);
+          } else if (simRatio >= 0.25) {
+            matchScore = Math.round(35 + (simRatio - 0.25) * 100);
+          } else {
+            matchScore = Math.max(10, Math.round(simRatio * 100));
+          }
+        }
       }
+
+      const isGood = matchScore >= 75;
+      const isAvg = matchScore >= 50;
 
       return {
         accuracyScore: matchScore,
-        fluencyScore: Math.max(75, matchScore - 4),
-        grade: matchScore >= 90 ? 'A+' : 'A',
-        feedbackInHindi: `शानदार प्रयास! आपका उच्चारण स्पष्ट है। (${langDetail.phoneticHindi}) को 1-2 बार और बोलकर पक्का करें।`,
+        fluencyScore: Math.max(0, matchScore - 5),
+        grade: matchScore >= 90 ? 'A+' : matchScore >= 80 ? 'A' : matchScore >= 60 ? 'B' : matchScore >= 40 ? 'C' : 'D',
+        feedbackInHindi: isGood 
+          ? `शानदार प्रयास! आपका उच्चारण बहुत अच्छा और स्पष्ट है। (${langDetail.phoneticHindi}) को इसी तरह बोलें।`
+          : isAvg
+          ? `मध्यम प्रयास। ध्वनि में थोड़ा अंतर है। (${langDetail.phoneticHindi}) को 1-2 बार और सुनकर बोलें।`
+          : `गलत उच्चारण। आपने बोला: "${textToCheck}" जबकि सही उच्चारण (${langDetail.phoneticHindi}) है। कृपया ध्वनि सुनकर पुनः प्रयास करें।`,
         phoneticGuideHindi: langDetail.phoneticHindi,
         syllableBreakdown: (langDetail.phoneticHindi || langDetail.word).split(/[\s-]+/).map((s: string) => ({
           syllable: s,
-          correct: true,
-          tip: 'स्पष्ट'
+          correct: matchScore >= 70,
+          tip: matchScore >= 70 ? 'स्पष्ट' : 'सुधारें'
         })),
-        soundTipsHindi: 'आवाज को स्थिर और मध्यम गति में रखें ताकि सामने वाला व्यक्ति आसानी से समझ सके।',
+        soundTipsHindi: matchScore >= 75
+          ? 'आवाज को स्थिर और मध्यम गति में रखें।'
+          : `शब्द को धीरे और स्पष्ट बोलें: "${langDetail.phoneticHindi || langDetail.word}"`,
         workplaceContextHindi: `कार्यस्थल पर यह "${currentItem.hindiTerm}" के लिए आवश्यक शब्द है।`,
         isFallback: true
       };
@@ -234,7 +335,7 @@ export const VoicePronunciationCoachView: React.FC<VoicePronunciationCoachViewPr
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000); // 3-second hard timeout for ultra-fast response
+      const timeoutId = setTimeout(() => controller.abort(), 3200); // 3.2-second hard timeout for ultra-fast response
 
       const res = await fetch('/api/voice-pronunciation-eval', {
         method: 'POST',
@@ -255,7 +356,13 @@ export const VoicePronunciationCoachView: React.FC<VoicePronunciationCoachViewPr
       
       if (json.success && json.data) {
         setEvaluation(json.data);
-        if (json.data.accuracyScore >= 80) {
+        const score = json.data.accuracyScore ?? 0;
+        if (score >= 80) {
+          if (testMode && testedCount + 1 >= 10) {
+            haptics.milestone();
+          } else {
+            haptics.success();
+          }
           try {
             confetti({
               particleCount: 45,
@@ -263,19 +370,32 @@ export const VoicePronunciationCoachView: React.FC<VoicePronunciationCoachViewPr
               origin: { y: 0.6 }
             });
           } catch (e) {}
+        } else {
+          haptics.warning();
         }
+
         if (testMode) {
           setTestedCount(prev => prev + 1);
-          setTestScore(prev => prev + (json.data.accuracyScore || 85));
+          setTestScore(prev => prev + score);
         }
       } else {
         const local = buildInstantLocalScore();
         setEvaluation(local);
+        if (local.accuracyScore >= 80) {
+          haptics.success();
+        } else {
+          haptics.warning();
+        }
       }
     } catch (error) {
       console.warn('Evaluation fallback to instant score:', error);
       const local = buildInstantLocalScore();
       setEvaluation(local);
+      if (local.accuracyScore >= 80) {
+        haptics.success();
+      } else {
+        haptics.warning();
+      }
       if (testMode) {
         setTestedCount(prev => prev + 1);
         setTestScore(prev => prev + local.accuracyScore);
@@ -289,6 +409,7 @@ export const VoicePronunciationCoachView: React.FC<VoicePronunciationCoachViewPr
   const toggleRecording = () => {
     if (isRecording) {
       // Stop recording manually
+      haptics.stopRecording();
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
         timerIntervalRef.current = null;
@@ -301,6 +422,7 @@ export const VoicePronunciationCoachView: React.FC<VoicePronunciationCoachViewPr
       handleEvaluate();
     } else {
       // Start 4-5 second speech test
+      haptics.startRecording();
       setRecognizedTranscript('');
       recognizedTranscriptRef.current = '';
       setEvaluation(null);
@@ -393,6 +515,9 @@ export const VoicePronunciationCoachView: React.FC<VoicePronunciationCoachViewPr
       case 'Factory': return Factory;
       case 'Coins': return Coins;
       case 'ShieldAlert': return ShieldAlert;
+      case 'Sprout': return Sprout;
+      case 'Car': return Car;
+      case 'AlertTriangle': return AlertTriangle;
       default: return HardHat;
     }
   };
@@ -492,7 +617,7 @@ export const VoicePronunciationCoachView: React.FC<VoicePronunciationCoachViewPr
               }}
               className="bg-slate-950 text-amber-300 font-bold border border-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-amber-400 cursor-pointer w-full sm:w-auto"
             >
-              <option value="all">🌐 समस्त 8 कार्य क्षेत्र (All 150+ Words)</option>
+              <option value="all">🌐 समस्त 12 कार्य क्षेत्र (All {MIGRANT_VOCABULARY_150.length}+ Words)</option>
               {TRADE_CATEGORIES.map(trade => (
                 <option key={trade.id} value={trade.id}>
                   {trade.nameHindi} ({trade.nameEnglish})
@@ -774,7 +899,7 @@ export const VoicePronunciationCoachView: React.FC<VoicePronunciationCoachViewPr
             </button>
 
             <span className="text-xs font-mono text-slate-400">
-              प्रशिक्षण निदेशालय उत्तर प्रदेश • 150 शब्दावली
+              प्रशिक्षण निदेशालय उत्तर प्रदेश • 200+ शब्दावली संग्रह
             </span>
 
             <button
@@ -804,7 +929,9 @@ export const VoicePronunciationCoachView: React.FC<VoicePronunciationCoachViewPr
                 <span className={`px-2.5 py-0.5 rounded-full text-xs font-black font-mono ${
                   evaluation.accuracyScore >= 80 
                     ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
-                    : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                    : evaluation.accuracyScore >= 50
+                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                    : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
                 }`}>
                   ग्रेड {evaluation.grade}
                 </span>
@@ -819,7 +946,13 @@ export const VoicePronunciationCoachView: React.FC<VoicePronunciationCoachViewPr
                   <div>
                     <span className="text-[11px] font-bold text-slate-400 uppercase">सटीकता स्कोर (Accuracy)</span>
                     <div className="text-3xl font-black text-white font-mono flex items-baseline gap-1">
-                      <span className={evaluation.accuracyScore >= 80 ? 'text-emerald-400' : 'text-amber-400'}>
+                      <span className={
+                        evaluation.accuracyScore >= 80 
+                          ? 'text-emerald-400' 
+                          : evaluation.accuracyScore >= 50 
+                          ? 'text-amber-400' 
+                          : 'text-rose-400'
+                      }>
                         {evaluation.accuracyScore}
                       </span>
                       <span className="text-sm text-slate-400">/ 100</span>
@@ -835,9 +968,19 @@ export const VoicePronunciationCoachView: React.FC<VoicePronunciationCoachViewPr
                 </div>
 
                 {/* Hindi Feedback Box */}
-                <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-800/30 space-y-2">
-                  <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold">
-                    <CheckCircle2 className="w-4 h-4" />
+                <div className={`p-4 rounded-xl space-y-2 border ${
+                  evaluation.accuracyScore >= 80 
+                    ? 'bg-emerald-950/20 border-emerald-800/30 text-emerald-400' 
+                    : evaluation.accuracyScore >= 50
+                    ? 'bg-amber-950/20 border-amber-800/30 text-amber-400'
+                    : 'bg-rose-950/20 border-rose-800/30 text-rose-400'
+                }`}>
+                  <div className="flex items-center gap-2 text-xs font-bold">
+                    {evaluation.accuracyScore >= 80 ? (
+                      <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                    )}
                     <span>AI प्रशिक्षक मार्गदर्शन (Hindi Feedback):</span>
                   </div>
                   <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-medium">
