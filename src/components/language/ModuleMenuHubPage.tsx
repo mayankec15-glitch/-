@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { LanguageConfig } from '../../data/languageCurriculum';
 import { CountryFlagVisual, CountryFlagStripeBar, CountryFlagPaletteTag } from '../common/CountryFlagVisual';
 import { unlockAudioEngine, testSpeakerSound } from '../../utils/audioPlayer';
+import { VoiceTroubleshooterModal } from '../common/VoiceTroubleshooterModal';
 import { haptics } from '../../utils/haptics';
 import { LanguageSubTab } from './LanguageStudioView';
 import { 
@@ -58,6 +59,7 @@ export const ModuleMenuHubPage: React.FC<ModuleMenuHubPageProps> = ({
   const [isTestingSpeaker, setIsTestingSpeaker] = useState<boolean>(false);
   const [speakerTestSuccess, setSpeakerTestSuccess] = useState<boolean | null>(null);
   const [showVolumeGuide, setShowVolumeGuide] = useState<boolean>(false);
+  const [isTroubleshooterOpen, setIsTroubleshooterOpen] = useState<boolean>(false);
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'speaking' | 'vocab' | 'test'>('all');
 
   const menuItems: MenuItemData[] = [
@@ -310,7 +312,7 @@ export const ModuleMenuHubPage: React.FC<ModuleMenuHubPageProps> = ({
             </p>
           </div>
 
-          {/* Speaker Sound Test & Helper Buttons */}
+          {/* Speaker Sound Test & Voice Settings Buttons */}
           <div className="flex items-center gap-2 shrink-0 flex-wrap">
             <button
               onClick={handleTestSpeakerSound}
@@ -322,18 +324,21 @@ export const ModuleMenuHubPage: React.FC<ModuleMenuHubPageProps> = ({
                   ? 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40'
                   : 'bg-slate-900 text-amber-300 border-amber-500/30 hover:bg-amber-500/10'
               }`}
-              title="फोन पर स्पीकर आवाज जांचें"
+              title="फोन पर तुरंत स्पीकर आवाज जांचें"
             >
               <Volume2 className={`w-3.5 h-3.5 ${isTestingSpeaker ? 'animate-bounce' : ''}`} />
-              <span>{isTestingSpeaker ? 'ध्वनि बज रही है...' : speakerTestSuccess ? '✓ स्पीकर चालू' : '🔊 स्पीकर टेस्ट'}</span>
+              <span>{isTestingSpeaker ? 'ध्वनि बज रही है...' : speakerTestSuccess ? '✓ आवाज सक्रिय' : '🔊 स्पीकर टेस्ट'}</span>
             </button>
 
             <button
-              onClick={() => setShowVolumeGuide(!showVolumeGuide)}
-              className="p-1.5 rounded-xl bg-slate-900 text-slate-400 hover:text-white border border-slate-800 transition-all cursor-pointer"
-              title="फोन आवाज सहायता"
+              onClick={() => {
+                haptics.tap();
+                setIsTroubleshooterOpen(true);
+              }}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-amber-300 border border-slate-800 hover:border-amber-500/30 transition-all text-xs font-bold cursor-pointer"
+              title="आवाज व स्पीकर सेटिंग्स"
             >
-              <HelpCircle className="w-4 h-4" />
+              <span>⚙️ आवाज सेटिंग्स</span>
             </button>
           </div>
         </div>
@@ -464,6 +469,12 @@ export const ModuleMenuHubPage: React.FC<ModuleMenuHubPageProps> = ({
           );
         })}
       </div>
+
+      {/* Voice Troubleshooter & Settings Modal */}
+      <VoiceTroubleshooterModal 
+        isOpen={isTroubleshooterOpen} 
+        onClose={() => setIsTroubleshooterOpen(false)} 
+      />
 
     </div>
   );

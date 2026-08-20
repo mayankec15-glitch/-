@@ -3,6 +3,7 @@ import { SUPPORTED_LANGUAGES, LanguageConfig } from '../../data/languageCurricul
 import { MigrantVocabItem } from '../../data/migrantVocabData';
 import { CountryFlagVisual, CountryFlagStripeBar, CountryFlagPaletteTag } from '../common/CountryFlagVisual';
 import { unlockAudioEngine } from '../../utils/audioPlayer';
+import { VoiceTroubleshooterModal } from '../common/VoiceTroubleshooterModal';
 import { haptics } from '../../utils/haptics';
 import { CountrySelectionPage } from './CountrySelectionPage';
 import { ModuleMenuHubPage } from './ModuleMenuHubPage';
@@ -68,6 +69,7 @@ export const LanguageStudioView: React.FC = () => {
   const [selectedLang, setSelectedLang] = useState<LanguageConfig>(SUPPORTED_LANGUAGES[0]);
   const [activeSubTab, setActiveSubTab] = useState<LanguageSubTab>('voice-coach');
   const [selectedVocabForTest, setSelectedVocabForTest] = useState<MigrantVocabItem | null>(null);
+  const [isTroubleshooterOpen, setIsTroubleshooterOpen] = useState<boolean>(false);
   
   // Dropdown states for in-module switcher
   const [isModuleDropdownOpen, setIsModuleDropdownOpen] = useState<boolean>(false);
@@ -263,6 +265,18 @@ export const LanguageStudioView: React.FC = () => {
                 {currentItem.shortTitleHindi}
               </span>
             )}
+          </button>
+
+          {/* Quick Audio Help & Troubleshooter */}
+          <button
+            onClick={() => {
+              haptics.tap();
+              setIsTroubleshooterOpen(true);
+            }}
+            className="ml-auto flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-amber-300 border border-amber-500/30 hover:border-amber-400 text-xs font-bold transition-all shrink-0 cursor-pointer shadow-sm"
+            title="आवाज व स्पीकर सेटिंग्स"
+          >
+            <span>🔊 आवाज</span>
           </button>
 
         </div>
@@ -536,6 +550,12 @@ export const LanguageStudioView: React.FC = () => {
 
         </div>
       )}
+
+      {/* Voice Troubleshooter & Sound Settings Modal */}
+      <VoiceTroubleshooterModal 
+        isOpen={isTroubleshooterOpen} 
+        onClose={() => setIsTroubleshooterOpen(false)} 
+      />
 
     </div>
   );
